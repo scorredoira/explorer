@@ -206,9 +206,12 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate, NSToo
         case (53, []):
             if window?.styleMask.contains(.fullScreen) == true { return false }
             close()
-        case (49, []) where kind == .video:
-            guard let player = playerView.player else { return false }
-            player.timeControlStatus == .playing ? player.pause() : player.play()
+        case (49, []):
+            if kind == .video, let player = playerView.player {
+                player.timeControlStatus == .playing ? player.pause() : player.play()
+            } else {
+                close()
+            }
         case (15, [.command]):
             turn(clockwise: true)
         case (37, [.command]):

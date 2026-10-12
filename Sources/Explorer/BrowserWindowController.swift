@@ -396,6 +396,11 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         }
     }
 
+    @objc func previewSelection(_ sender: Any?) {
+        guard let item = selectedItems().first(where: { !$0.isFolder }) else { return NSSound.beep() }
+        preview(item)
+    }
+
     func preview(_ item: FileItem) {
         let siblings = (item.parent?.children ?? rootItems).filter { !$0.isFolder }.map(\.url)
         PreviewWindowController.shared.show(item.url, among: siblings)

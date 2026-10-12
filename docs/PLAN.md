@@ -95,7 +95,8 @@ Sobre zona blanca (la carpeta que estás viendo): Nueva carpeta, Nuevo archivo, 
 | `cmd+↑` | Carpeta superior |
 | `cmd+↓` | Abrir |
 | Enter | Renombrar |
-| Espacio / `cmd+y` | Vista rápida |
+| Espacio | Previsualizar (en el visor: cierra; en vídeo: pausa) |
+| `cmd+y` | Vista rápida de macOS |
 | `cmd+backspace` | Mover a la Papelera |
 | `cmd+option+c` | Copiar ruta |
 | `cmd+option+t` | Abrir terminal aquí |
