@@ -1,11 +1,24 @@
 import AppKit
 
+private final class DeletableTableView: NSTableView {
+    var onDelete: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 51 || event.keyCode == 117 {
+            onDelete?()
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+}
+
 final class SettingsWindowController: NSWindowController, NSTableViewDataSource, NSTableViewDelegate {
     private let homeLabel = NSTextField(labelWithString: "")
     private let terminalLabel = NSTextField(labelWithString: "")
     private let hiddenCheck = NSButton(checkboxWithTitle: "Mostrar archivos ocultos", target: nil, action: nil)
     private let loginCheck = NSButton(checkboxWithTitle: "Abrir al iniciar sesión (para que ⌥⌘E funcione siempre)", target: nil, action: nil)
-    private let table = NSTableView()
+    private let table = DeletableTableView()
+    private let removeButton = NSButton()
     private var rows: [(ext: String, app: String)] = []
 
     init() {
@@ -67,7 +80,13 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         scroll.documentView = table
         scroll.hasVerticalScroller = true
         scroll.borderType = .bezelBorder
-        let removeButton = NSButton(title: "Quitar", target: self, action: #selector(removeAssignment))
+        removeButton.image = NSImage(named: NSImage.removeTemplateName)
+        removeButton.bezelStyle = .smallSquare
+        removeButton.toolTip = "Quitar la asignación seleccionada"
+        removeButton.target = self
+        removeButton.action = #selector(removeAssignment)
+        removeButton.isEnabled = false
+        table.onDelete = { [weak self] in self?.removeAssignment() }
 
         for view in [grid, openWithTitle, scroll, removeButton] as [NSView] {
             view.translatesAutoresizingMaskIntoConstraints = false
@@ -82,8 +101,10 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
             scroll.topAnchor.constraint(equalTo: openWithTitle.bottomAnchor, constant: 6),
             scroll.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 20),
             scroll.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -20),
-            removeButton.topAnchor.constraint(equalTo: scroll.bottomAnchor, constant: 8),
-            removeButton.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -20),
+            removeButton.topAnchor.constraint(equalTo: scroll.bottomAnchor, constant: -1),
+            removeButton.leadingAnchor.constraint(equalTo: scroll.leadingAnchor),
+            removeButton.widthAnchor.constraint(equalToConstant: 24),
+            removeButton.heightAnchor.constraint(equalToConstant: 22),
             removeButton.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -20),
         ])
     }
@@ -95,6 +116,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         loginCheck.state = Settings.openAtLogin ? .on : .off
         rows = Settings.openWith.map { ($0.key, $0.value) }.sorted { $0.ext < $1.ext }
         table.reloadData()
+        removeButton.isEnabled = table.selectedRow >= 0
     }
 
     @objc private func chooseHome() {
@@ -123,6 +145,10 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     @objc private func toggleLogin() {
         Settings.openAtLogin = loginCheck.state == .on
         refresh()
+    }
+
+    func tableViewSelectionDidChange(_ notification: Notification) {
+        removeButton.isEnabled = table.selectedRow >= 0
     }
 
     @objc private func removeAssignment() {
