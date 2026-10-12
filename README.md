@@ -16,7 +16,7 @@ A fast, no-nonsense file browser for macOS, built to replace Finder for everyday
 - **Cut and paste like Windows/Linux** (`⌘X` / `⌘V`), with full undo (`⌘Z`).
 - **Favorites sidebar**, drag folders in and reorder them like in Finder.
 - **Open Terminal Here** (a new Ghostty window by default) and **Open in den**.
-- **`⌥⌘E` from anywhere** opens a new window, like Win+E.
+- **`⌘E` from anywhere** opens a new window, like Win+E. You can change it in Settings.
 
 ## Built-in previewer
 
@@ -40,7 +40,7 @@ cd explorer
 ./install.sh
 ```
 
-This builds the app, signs it with your Apple Development certificate if you have one (ad hoc otherwise), installs it to `~/Applications/Explorer.app` and opens it. Explorer adds itself to your login items so `⌥⌘E` always works; turn that off in Settings.
+This builds the app, signs it with your Apple Development certificate if you have one (ad hoc otherwise), installs it to `~/Applications/Explorer.app` and opens it. Explorer adds itself to your login items so the shortcut always works; turn that off in Settings.
 
 Tip: give Explorer **Full Disk Access** (System Settings → Privacy & Security) so it can show folder sizes everywhere without permission prompts.
 
@@ -48,7 +48,7 @@ Tip: give Explorer **Full Disk Access** (System Settings → Privacy & Security)
 
 | Shortcut | Action |
 |---|---|
-| `⌥⌘E` (global) | New window from any app |
+| `⌘E` (global, changeable in Settings) | New window from any app |
 | `⌘N` | New window on the same folder |
 | `⇧⌘N` / `⌥⌘N` | New folder / new file |
 | Enter | Rename |

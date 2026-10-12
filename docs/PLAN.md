@@ -109,15 +109,16 @@ On empty space (the folder you are looking at): New Folder, New File, Paste, Cop
 | `cmd+,` | Settings |
 | `cmd+z` / `cmd+shift+z` | Undo / Redo (move, copy, rename, trash, create) |
 | Esc | Cancels a pending cut |
-| `⌥⌘E` (global) | Opens a window from any app |
+| `⌘E` (global, changeable in Settings) | Opens a window from any app |
 
 ## Launch
 
-- Explorer starts at login (without opening a window) so `⌥⌘E` always works. It can be turned off in Settings.
+- Explorer starts at login (without opening a window) so the global shortcut always works. It can be turned off in Settings.
 
 ## Settings
 
 - Start folder.
+- Global shortcut for a new window (`⌘E` by default; click it and press the new one, Delete turns it off, Esc cancels). It takes the key from every app, so `⌘E` stops doing "Use Selection for Find" elsewhere.
 - Terminal.
 - Show hidden files.
 - Open at login.

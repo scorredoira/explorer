@@ -6,6 +6,7 @@ extension Notification.Name {
     static let showHiddenChanged = Notification.Name("explorer.showHiddenChanged")
     static let clipboardChanged = Notification.Name("explorer.clipboardChanged")
     static let folderSizeUpdated = Notification.Name("explorer.folderSizeUpdated")
+    static let globalShortcutChanged = Notification.Name("explorer.globalShortcutChanged")
 }
 
 enum Settings {
@@ -57,6 +58,21 @@ enum Settings {
     static var openWith: [String: String] {
         get { defaults.dictionary(forKey: "openWith") as? [String: String] ?? [:] }
         set { defaults.set(newValue, forKey: "openWith") }
+    }
+
+    static var globalShortcut: Shortcut? {
+        get {
+            guard let stored = defaults.dictionary(forKey: "globalShortcut") else { return .standard }
+            guard let keyCode = stored["keyCode"] as? Int, let flags = stored["modifiers"] as? UInt,
+                  let key = stored["key"] as? String, !key.isEmpty else { return nil }
+            return Shortcut(keyCode: keyCode, modifiers: NSEvent.ModifierFlags(rawValue: flags), key: key)
+        }
+        set {
+            let value = newValue ?? Shortcut(keyCode: -1, modifiers: [], key: "")
+            defaults.set(["keyCode": value.keyCode, "modifiers": value.modifiers.rawValue, "key": value.key],
+                         forKey: "globalShortcut")
+            NotificationCenter.default.post(name: .globalShortcutChanged, object: nil)
+        }
     }
 
     static var openAtLogin: Bool {

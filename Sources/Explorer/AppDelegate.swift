@@ -11,13 +11,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = buildMainMenu()
-        HotKey.register(keyCode: kVK_ANSI_E, modifiers: cmdKey | optionKey) { [weak self] in
-            self?.openWindow(at: Settings.homeFolder)
-            NSApp.activate(ignoringOtherApps: true)
+        registerGlobalShortcut()
+        NotificationCenter.default.addObserver(forName: .globalShortcutChanged, object: nil, queue: .main) { [weak self] _ in
+            self?.registerGlobalShortcut()
         }
         Settings.setUpLoginItemOnce()
         if !openedWithURLs && !launchedAtLogin { openWindow(at: Settings.homeFolder) }
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func registerGlobalShortcut() {
+        HotKey.register(Settings.globalShortcut) { [weak self] in
+            self?.openWindow(at: Settings.homeFolder)
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     private var launchedAtLogin: Bool {

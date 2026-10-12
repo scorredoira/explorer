@@ -16,14 +16,15 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     private let homeLabel = NSTextField(labelWithString: "")
     private let terminalLabel = NSTextField(labelWithString: "")
     private let hiddenCheck = NSButton(checkboxWithTitle: "Show Hidden Files", target: nil, action: nil)
-    private let loginCheck = NSButton(checkboxWithTitle: "Open at login (so ⌥⌘E always works)", target: nil, action: nil)
+    private let loginCheck = NSButton(checkboxWithTitle: "Open at login (so the shortcut always works)", target: nil, action: nil)
+    private let shortcutRecorder = ShortcutRecorder()
     private let table = DeletableTableView()
     private let removeButton = NSButton()
     private var rows: [(ext: String, app: String)] = []
 
     init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 420),
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 450),
             styleMask: [.titled, .closable], backing: .buffered, defer: false)
         window.title = "Settings"
         super.init(window: window)
@@ -45,18 +46,20 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     private func build() {
         guard let content = window?.contentView else { return }
 
-        let homeButton = NSButton(title: "Elegir…", target: self, action: #selector(chooseHome))
-        let terminalButton = NSButton(title: "Elegir…", target: self, action: #selector(chooseTerminal))
+        let homeButton = NSButton(title: "Choose…", target: self, action: #selector(chooseHome))
+        let terminalButton = NSButton(title: "Choose…", target: self, action: #selector(chooseTerminal))
         hiddenCheck.target = self
         hiddenCheck.action = #selector(toggleHidden)
         loginCheck.target = self
         loginCheck.action = #selector(toggleLogin)
+        shortcutRecorder.onChange = { Settings.globalShortcut = $0 }
         homeLabel.lineBreakMode = .byTruncatingMiddle
         terminalLabel.lineBreakMode = .byTruncatingMiddle
 
         let grid = NSGridView(views: [
             [NSTextField(labelWithString: "Start folder:"), homeLabel, homeButton],
             [NSTextField(labelWithString: "Terminal:"), terminalLabel, terminalButton],
+            [NSTextField(labelWithString: "New window shortcut:"), shortcutRecorder, NSGridCell.emptyContentView],
             [NSGridCell.emptyContentView, hiddenCheck, NSGridCell.emptyContentView],
             [NSGridCell.emptyContentView, loginCheck, NSGridCell.emptyContentView],
         ])
@@ -65,6 +68,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         grid.columnSpacing = 8
         grid.rowSpacing = 10
         homeLabel.widthAnchor.constraint(equalToConstant: 300).isActive = true
+        grid.cell(for: shortcutRecorder)?.xPlacement = .leading
 
         let openWithTitle = NSTextField(labelWithString: "Always open with:")
         for (id, title, width) in [("ext", "Extension", 100.0), ("app", "App", 340.0)] {
@@ -112,6 +116,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     private func refresh() {
         homeLabel.stringValue = Settings.homeFolder.path
         terminalLabel.stringValue = Settings.terminalApp.map { FileManager.default.displayName(atPath: $0.path) } ?? "—"
+        shortcutRecorder.shortcut = Settings.globalShortcut
         hiddenCheck.state = Settings.showHidden ? .on : .off
         loginCheck.state = Settings.openAtLogin ? .on : .off
         rows = Settings.openWith.map { ($0.key, $0.value) }.sorted { $0.ext < $1.ext }
