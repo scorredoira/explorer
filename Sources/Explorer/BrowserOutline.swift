@@ -202,13 +202,17 @@ extension BrowserWindowController: NSMenuDelegate {
             menu.add("Abrir en nueva ventana") { AppDelegate.shared.openWindow(at: single.url) }
         }
         if let single, !single.isFolder {
+            if !Opener.opensInPreview(single.url) {
+                menu.add("Previsualizar") { [weak self] in self?.preview(single) }
+            }
+            let previewSingle: () -> Void = { [weak self] in self?.preview(single) }
             let openWith = NSMenuItem(title: "Abrir con", action: nil, keyEquivalent: "")
-            openWith.submenu = openWithMenu(for: single.url, remember: false)
+            openWith.submenu = openWithMenu(for: single.url, remember: false, preview: previewSingle)
             menu.addItem(openWith)
             let ext = single.url.pathExtension.lowercased()
             if !ext.isEmpty {
                 let always = NSMenuItem(title: "Abrir siempre .\(ext) con", action: nil, keyEquivalent: "")
-                always.submenu = openWithMenu(for: single.url, remember: true)
+                always.submenu = openWithMenu(for: single.url, remember: true, preview: previewSingle)
                 menu.addItem(always)
                 if Settings.openWith[ext] != nil {
                     menu.add("Quitar programa asignado a .\(ext)") { Settings.openWith[ext] = nil }

@@ -147,9 +147,8 @@ enum FileOps {
     }
 
     static func open(_ url: URL) {
-        let ext = url.pathExtension.lowercased()
-        if !ext.isEmpty, let appPath = Settings.openWith[ext], FileManager.default.fileExists(atPath: appPath) {
-            open(url, with: URL(fileURLWithPath: appPath))
+        if case .app(let app) = Opener.handler(for: url) {
+            open(url, with: app)
         } else {
             NSWorkspace.shared.open(url)
         }

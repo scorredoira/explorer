@@ -383,13 +383,22 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
             navigate(to: item.url)
             return
         }
+        var previewed = false
         for item in items {
             if item.isFolder {
                 AppDelegate.shared.openWindow(at: item.url)
+            } else if Opener.opensInPreview(item.url) {
+                if !previewed { preview(item) }
+                previewed = true
             } else {
                 FileOps.open(item.url)
             }
         }
+    }
+
+    func preview(_ item: FileItem) {
+        let siblings = (item.parent?.children ?? rootItems).filter { !$0.isFolder }.map(\.url)
+        PreviewWindowController.shared.show(item.url, among: siblings)
     }
 
     @objc func openSelection(_ sender: Any?) { open(selectedItems()) }

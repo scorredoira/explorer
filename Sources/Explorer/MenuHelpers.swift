@@ -27,9 +27,17 @@ extension NSMenu {
     }
 }
 
-func openWithMenu(for url: URL, remember: Bool) -> NSMenu {
+func openWithMenu(for url: URL, remember: Bool, preview: @escaping () -> Void) -> NSMenu {
     let menu = NSMenu()
     let ext = url.pathExtension.lowercased()
+    var previewTitle = "Previsualizar"
+    if remember, Opener.opensInPreview(url) { previewTitle += " ✓" }
+    let previewItem = menu.add(previewTitle) {
+        if remember { Settings.openWith[ext] = Opener.previewID }
+        preview()
+    }
+    previewItem.image = NSImage(systemSymbolName: "eye", accessibilityDescription: nil)
+    menu.addItem(.separator())
     let defaultApp = NSWorkspace.shared.urlForApplication(toOpen: url)
     var apps = NSWorkspace.shared.urlsForApplications(toOpen: url)
     if let defaultApp {

@@ -136,7 +136,9 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         let isExt = tableColumn?.identifier.rawValue == "ext"
-        let value = isExt ? ".\(rows[row].ext)" : FileManager.default.displayName(atPath: rows[row].app)
+        let app = rows[row].app
+        let value = isExt ? ".\(rows[row].ext)"
+            : app == Opener.previewID ? "Previsualizar" : FileManager.default.displayName(atPath: app)
         let text = NSTextField(labelWithString: value)
         text.lineBreakMode = .byTruncatingMiddle
         return text

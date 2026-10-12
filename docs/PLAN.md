@@ -67,6 +67,15 @@ Sobre zona blanca (la carpeta que estás viendo): Nueva carpeta, Nuevo archivo, 
 - Copiar archivos desde Finder y pegar aquí funciona, y al revés.
 - Si el nombre existe: "nombre 2". Copiar en la misma carpeta: "nombre copia".
 
+## Previsualizar
+
+- Visor propio en una sola ventana que se reutiliza. ← y → pasan al archivo anterior/siguiente de la carpeta, en el orden de la lista (con el filtro aplicado). Esc cierra.
+- Imágenes: girar (⌘L / ⌘R, se guarda al instante; en JPEG sólo cambia la orientación EXIF, sin recomprimir), copiar imagen (⌘C), copiar ruta (⌥⌘C), zoom con pellizco y doble clic (ajustar ↔ 100%).
+- Vídeo que reproduce macOS (mp4, mov, m4v…): reproductor integrado, lee del disco sin cargar el archivo entero (películas de varios GB). Espacio pausa.
+- Todo lo demás: la vista previa del sistema (PDF, texto, audio, Office…) dentro de la misma ventana.
+- Por defecto abren con Previsualizar las imágenes y los vídeos que reproduce macOS. Los vídeos que no (mkv, avi…) abren con VLC si está instalado.
+- Por tipo: "Abrir siempre .ext con ▸" tiene Previsualizar como primera opción. Si un tipo no abre con Previsualizar, el botón derecho tiene "Previsualizar". "Abrir con ▸" también la incluye.
+
 ## Terminal
 
 - Abrir terminal aquí abre una instancia nueva de Ghostty en esa carpeta (`--working-directory`). Se puede cambiar en Ajustes.
