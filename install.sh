@@ -7,4 +7,4 @@ mkdir -p ~/Applications
 rm -rf ~/Applications/Explorer.app
 cp -R build/Explorer.app ~/Applications/
 open ~/Applications/Explorer.app
-echo "Instalada en ~/Applications/Explorer.app"
+echo "Installed to ~/Applications/Explorer.app"
