@@ -170,6 +170,8 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         }
     }
 
+    func windowWillReturnUndoManager(_ window: NSWindow) -> UndoManager? { FileOps.undoManager }
+
     func windowWillClose(_ notification: Notification) {
         sizeQueue.cancelAllOperations()
         watcher = nil

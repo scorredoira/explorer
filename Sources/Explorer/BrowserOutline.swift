@@ -11,6 +11,8 @@ final class FileOutlineView: NSOutlineView {
             browser?.renameSelection(nil)
         case (49, []):
             browser?.toggleQuickLook(nil)
+        case (53, []):
+            if !FileClipboard.cancelCut() { super.keyDown(with: event) }
         default:
             super.keyDown(with: event)
         }

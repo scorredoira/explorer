@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 
 extension Notification.Name {
     static let favoritesChanged = Notification.Name("explorer.favoritesChanged")
@@ -56,6 +57,27 @@ enum Settings {
     static var openWith: [String: String] {
         get { defaults.dictionary(forKey: "openWith") as? [String: String] ?? [:] }
         set { defaults.set(newValue, forKey: "openWith") }
+    }
+
+    static var openAtLogin: Bool {
+        get { SMAppService.mainApp.status == .enabled }
+        set {
+            do {
+                if newValue {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                showError(error.localizedDescription)
+            }
+        }
+    }
+
+    static func setUpLoginItemOnce() {
+        guard !defaults.bool(forKey: "loginItemConfigured"), Bundle.main.bundleIdentifier != nil else { return }
+        defaults.set(true, forKey: "loginItemConfigured")
+        openAtLogin = true
     }
 
     static func addFavorite(_ url: URL, at index: Int? = nil) {

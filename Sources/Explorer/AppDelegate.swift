@@ -1,4 +1,6 @@
 import AppKit
+import Carbon.HIToolbox
+import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     static var shared: AppDelegate { NSApp.delegate as! AppDelegate }
@@ -9,8 +11,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = buildMainMenu()
-        if !openedWithURLs { openWindow(at: Settings.homeFolder) }
+        HotKey.register(keyCode: kVK_ANSI_E, modifiers: cmdKey | optionKey) { [weak self] in
+            self?.openWindow(at: Settings.homeFolder)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        Settings.setUpLoginItemOnce()
+        if !openedWithURLs && !launchedAtLogin { openWindow(at: Settings.homeFolder) }
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private var launchedAtLogin: Bool {
+        let event = NSAppleEventManager.shared().currentAppleEvent
+        return event?.eventID == kAEOpenApplication
+            && event?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -88,6 +101,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item(file, "Cerrar ventana", #selector(NSWindow.performClose(_:)), "w")
 
         let edit = submenu(main, "Edición")
+        item(edit, "Deshacer", Selector(("undo:")), "z")
+        item(edit, "Rehacer", Selector(("redo:")), "z", [.command, .shift])
+        edit.addItem(.separator())
         item(edit, "Cortar", #selector(NSText.cut(_:)), "x")
         item(edit, "Copiar", #selector(NSText.copy(_:)), "c")
         item(edit, "Pegar", #selector(NSText.paste(_:)), "v")

@@ -1,9 +1,18 @@
 import AppKit
 
 enum FileOps {
+    static let undoManager = UndoManager()
+    private static let undoTarget = NSObject()
+
+    private static func registerUndo(_ name: String, _ handler: @escaping () -> Void) {
+        undoManager.registerUndo(withTarget: undoTarget) { _ in handler() }
+        undoManager.setActionName(name)
+    }
+
     static func transfer(_ urls: [URL], to dir: URL, move: Bool, completion: (([URL]) -> Void)? = nil) {
         DispatchQueue.global(qos: .userInitiated).async {
             var results: [URL] = []
+            var done: [(from: URL, to: URL)] = []
             var errors: [String] = []
             for src in urls {
                 let sameFolder = src.deletingLastPathComponent().standardizedFileURL.path == dir.standardizedFileURL.path
@@ -24,15 +33,43 @@ enum FileOps {
                         try FileManager.default.copyItem(at: src, to: dest)
                     }
                     results.append(dest)
+                    done.append((src, dest))
                 } catch {
                     errors.append(error.localizedDescription)
                 }
             }
             DispatchQueue.main.async {
+                if !done.isEmpty {
+                    if move {
+                        let back = done.map { (from: $0.to, to: $0.from) }
+                        registerUndo("Mover") { movePairs(back, name: "Mover") }
+                    } else {
+                        let copies = done.map(\.to)
+                        registerUndo("Copiar") { trash(copies, name: "Copiar") }
+                    }
+                }
                 if !errors.isEmpty { showError(errors.joined(separator: "\n")) }
                 completion?(results)
             }
         }
+    }
+
+    static func movePairs(_ pairs: [(from: URL, to: URL)], name: String) {
+        var done: [(from: URL, to: URL)] = []
+        var errors: [String] = []
+        for pair in pairs {
+            do {
+                try FileManager.default.moveItem(at: pair.from, to: pair.to)
+                done.append(pair)
+            } catch {
+                errors.append(error.localizedDescription)
+            }
+        }
+        if !done.isEmpty {
+            let back = done.map { (from: $0.to, to: $0.from) }
+            registerUndo(name) { movePairs(back, name: name) }
+        }
+        if !errors.isEmpty { showError(errors.joined(separator: "\n")) }
     }
 
     static func uniqueURL(_ url: URL, copy: Bool = false) -> URL {
@@ -51,9 +88,13 @@ enum FileOps {
         }
     }
 
-    static func trash(_ urls: [URL]) {
-        NSWorkspace.shared.recycle(urls) { _, error in
-            if let error { showError(error.localizedDescription) }
+    static func trash(_ urls: [URL], name: String = "Mover a la Papelera") {
+        NSWorkspace.shared.recycle(urls) { trashed, error in
+            DispatchQueue.main.async {
+                let back = trashed.map { (from: $0.value, to: $0.key) }
+                if !back.isEmpty { registerUndo(name) { movePairs(back, name: name) } }
+                if let error { showError(error.localizedDescription) }
+            }
         }
     }
 
@@ -61,6 +102,7 @@ enum FileOps {
         let url = uniqueURL(dir.appendingPathComponent("carpeta sin título"))
         do {
             try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false)
+            registerUndo("Nueva carpeta") { trash([url], name: "Nueva carpeta") }
             return url
         } catch {
             showError(error.localizedDescription)
@@ -74,6 +116,7 @@ enum FileOps {
             showError("No se pudo crear el archivo en \(dir.path).")
             return nil
         }
+        registerUndo("Nuevo archivo") { trash([url], name: "Nuevo archivo") }
         return url
     }
 
@@ -81,6 +124,7 @@ enum FileOps {
         let dest = url.deletingLastPathComponent().appendingPathComponent(name)
         do {
             try FileManager.default.moveItem(at: url, to: dest)
+            registerUndo("Renombrar") { movePairs([(from: dest, to: url)], name: "Renombrar") }
             return dest
         } catch {
             showError(error.localizedDescription)
@@ -183,6 +227,14 @@ enum FileClipboard {
     }
 
     static var hasFiles: Bool { !urls().isEmpty }
+
+    static func cancelCut() -> Bool {
+        guard isCut else { return false }
+        cutPaths = []
+        cutChangeCount = -1
+        NotificationCenter.default.post(name: .clipboardChanged, object: nil)
+        return true
+    }
 
     static var isCut: Bool { NSPasteboard.general.changeCount == cutChangeCount && !cutPaths.isEmpty }
 

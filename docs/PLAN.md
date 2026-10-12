@@ -94,6 +94,13 @@ Sobre zona blanca (la carpeta que estás viendo): Nueva carpeta, Nuevo archivo, 
 | `cmd+f` | Filtro |
 | `cmd+l`, `cmd+shift+g` | Editar ruta |
 | `cmd+,` | Ajustes |
+| `cmd+z` / `cmd+shift+z` | Deshacer / Rehacer (mover, copiar, renombrar, papelera, crear) |
+| Esc | Cancela el corte pendiente |
+| `⌥⌘E` (global) | Abre una ventana desde cualquier app |
+
+## Arranque
+
+- La app arranca al iniciar sesión (sin abrir ventana) para que `⌥⌘E` funcione siempre. Se desactiva en Ajustes.
 
 ## Ajustes
 
@@ -104,6 +111,4 @@ Sobre zona blanca (la carpeta que estás viendo): Nueva carpeta, Nuevo archivo, 
 
 ## Pendiente (después)
 
-- Deshacer (`cmd+z`) de mover/renombrar/papelera.
-- Icono de la app.
 - Progreso visible en copias grandes.

@@ -4,6 +4,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     private let homeLabel = NSTextField(labelWithString: "")
     private let terminalLabel = NSTextField(labelWithString: "")
     private let hiddenCheck = NSButton(checkboxWithTitle: "Mostrar archivos ocultos", target: nil, action: nil)
+    private let loginCheck = NSButton(checkboxWithTitle: "Abrir al iniciar sesión (para que ⌥⌘E funcione siempre)", target: nil, action: nil)
     private let table = NSTableView()
     private var rows: [(ext: String, app: String)] = []
 
@@ -35,6 +36,8 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         let terminalButton = NSButton(title: "Elegir…", target: self, action: #selector(chooseTerminal))
         hiddenCheck.target = self
         hiddenCheck.action = #selector(toggleHidden)
+        loginCheck.target = self
+        loginCheck.action = #selector(toggleLogin)
         homeLabel.lineBreakMode = .byTruncatingMiddle
         terminalLabel.lineBreakMode = .byTruncatingMiddle
 
@@ -42,6 +45,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
             [NSTextField(labelWithString: "Carpeta de inicio:"), homeLabel, homeButton],
             [NSTextField(labelWithString: "Terminal:"), terminalLabel, terminalButton],
             [NSGridCell.emptyContentView, hiddenCheck, NSGridCell.emptyContentView],
+            [NSGridCell.emptyContentView, loginCheck, NSGridCell.emptyContentView],
         ])
         grid.column(at: 0).xPlacement = .trailing
         grid.rowAlignment = .firstBaseline
@@ -88,6 +92,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         homeLabel.stringValue = Settings.homeFolder.path
         terminalLabel.stringValue = Settings.terminalApp.map { FileManager.default.displayName(atPath: $0.path) } ?? "—"
         hiddenCheck.state = Settings.showHidden ? .on : .off
+        loginCheck.state = Settings.openAtLogin ? .on : .off
         rows = Settings.openWith.map { ($0.key, $0.value) }.sorted { $0.ext < $1.ext }
         table.reloadData()
     }
@@ -113,6 +118,11 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
 
     @objc private func toggleHidden() {
         Settings.showHidden = hiddenCheck.state == .on
+    }
+
+    @objc private func toggleLogin() {
+        Settings.openAtLogin = loginCheck.state == .on
+        refresh()
     }
 
     @objc private func removeAssignment() {
