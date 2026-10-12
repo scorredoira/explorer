@@ -12,15 +12,12 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         self.browser = browser
         super.init()
 
-        let title = NSTextField(labelWithString: "Favoritos")
-        title.font = .systemFont(ofSize: NSFont.smallSystemFontSize, weight: .semibold)
-        title.textColor = .secondaryLabelColor
-
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("favorite"))
         table.addTableColumn(column)
         table.headerView = nil
         table.style = .sourceList
-        table.rowHeight = 24
+        table.rowSizeStyle = .default
+        table.floatsGroupRows = false
         table.dataSource = self
         table.delegate = self
         table.target = self
@@ -36,15 +33,10 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
         scroll.drawsBackground = false
-
-        for sub in [title, scroll] as [NSView] {
-            sub.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(sub)
-        }
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(scroll)
         NSLayoutConstraint.activate([
-            title.topAnchor.constraint(equalTo: view.topAnchor, constant: 10),
-            title.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
-            scroll.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 4),
+            scroll.topAnchor.constraint(equalTo: view.topAnchor),
             scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -59,25 +51,48 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
     }
 
     func highlight(_ url: URL) {
-        if let row = items.firstIndex(where: { $0.standardizedFileURL.path == url.standardizedFileURL.path }) {
-            table.selectRowIndexes([row], byExtendingSelection: false)
+        if let index = items.firstIndex(where: { $0.standardizedFileURL.path == url.standardizedFileURL.path }) {
+            table.selectRowIndexes([index + 1], byExtendingSelection: false)
         } else {
             table.deselectAll(nil)
         }
     }
 
     @objc private func clicked(_ sender: Any?) {
-        let row = table.clickedRow
-        guard row >= 0, row < items.count else { return }
-        browser?.navigate(to: items[row])
+        guard let index = index(table.clickedRow) else { return }
+        browser?.navigate(to: items[index])
     }
 
-    func numberOfRows(in tableView: NSTableView) -> Int { items.count }
+    private func index(_ row: Int) -> Int? {
+        row >= 1 && row <= items.count ? row - 1 : nil
+    }
+
+    func numberOfRows(in tableView: NSTableView) -> Int { items.count + 1 }
+
+    func tableView(_ tableView: NSTableView, isGroupRow row: Int) -> Bool { row == 0 }
+
+    func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool { row > 0 }
+
+    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat { row == 0 ? 28 : 26 }
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        if row == 0 {
+            let header = NSTableCellView()
+            let text = NSTextField(labelWithString: "Favoritos")
+            text.font = .systemFont(ofSize: NSFont.smallSystemFontSize, weight: .semibold)
+            text.textColor = .secondaryLabelColor
+            text.translatesAutoresizingMaskIntoConstraints = false
+            header.addSubview(text)
+            header.textField = text
+            NSLayoutConstraint.activate([
+                text.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 4),
+                text.bottomAnchor.constraint(equalTo: header.bottomAnchor, constant: -4),
+            ])
+            return header
+        }
         let id = NSUserInterfaceItemIdentifier("favorite-cell")
         let cell = tableView.makeView(withIdentifier: id, owner: self) as? NSTableCellView ?? makeCell(id)
-        let url = items[row]
+        let url = items[row - 1]
         let exists = isFolder(url)
         cell.textField?.stringValue = FileManager.default.displayName(atPath: url.path)
         cell.textField?.textColor = exists ? .labelColor : .tertiaryLabelColor
@@ -115,46 +130,50 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
     // MARK: Drag and drop
 
     func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
+        guard let index = index(row) else { return nil }
         let item = NSPasteboardItem()
-        item.setString(String(row), forType: Self.rowType)
+        item.setString(String(index), forType: Self.rowType)
         return item
     }
 
     func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo,
                    proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+        let row = max(row, 1)
         if info.draggingPasteboard.string(forType: Self.rowType) != nil {
             tableView.setDropRow(row, dropOperation: .above)
             return .move
         }
         let urls = draggedURLs(info)
         guard !urls.isEmpty else { return [] }
-        if dropOperation == .on, row < items.count {
-            let dir = items[row]
+        if dropOperation == .on, let index = index(row) {
+            let dir = items[index]
             let allInside = urls.allSatisfy { $0.deletingLastPathComponent().standardizedFileURL.path == dir.standardizedFileURL.path }
             let operation = FileOps.dropOperation(info, urls: urls, to: dir)
             return operation == .move && allInside ? [] : operation
         }
+        tableView.setDropRow(row, dropOperation: .above)
         return urls.allSatisfy(isFolder) ? .link : []
     }
 
     func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo,
                    row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
+        let target = max(row - 1, 0)
         if let source = info.draggingPasteboard.string(forType: Self.rowType).flatMap(Int.init) {
             var list = items
             let moved = list.remove(at: source)
-            list.insert(moved, at: source < row ? row - 1 : row)
+            list.insert(moved, at: source < target ? target - 1 : target)
             Settings.favorites = list
             return true
         }
         let urls = draggedURLs(info)
-        if dropOperation == .on, row < items.count {
-            let dir = items[row]
+        if dropOperation == .on, let index = index(row) {
+            let dir = items[index]
             let operation = FileOps.dropOperation(info, urls: urls, to: dir)
             guard !operation.isEmpty else { return false }
             FileOps.transfer(urls, to: dir, move: operation == .move)
             return true
         }
-        var index = row
+        var index = target
         for url in urls where isFolder(url) && !items.contains(where: { $0.path == url.path }) {
             Settings.addFavorite(url, at: index)
             index += 1
@@ -170,9 +189,8 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
-        let row = table.clickedRow
-        guard row >= 0, row < items.count else { return }
-        let url = items[row]
+        guard let index = index(table.clickedRow) else { return }
+        let url = items[index]
         menu.add("Abrir") { [weak self] in self?.browser?.navigate(to: url) }
         menu.add("Abrir en nueva ventana") { AppDelegate.shared.openWindow(at: url) }
         menu.separator()

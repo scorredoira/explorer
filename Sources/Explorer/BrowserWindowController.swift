@@ -41,13 +41,15 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         current = url.standardizedFileURL
         let window = BrowserWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1100, height: 680),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered, defer: false)
-        window.minSize = NSSize(width: 600, height: 300)
+        window.minSize = NSSize(width: 640, height: 320)
         window.tabbingMode = .disallowed
+        window.titleVisibility = .hidden
+        window.toolbarStyle = .unified
         super.init(window: window)
         window.delegate = self
-        sizeQueue.maxConcurrentOperationCount = 2
+        sizeQueue.maxConcurrentOperationCount = 4
         sizeQueue.qualityOfService = .utility
         favorites = FavoritesController(browser: self)
         buildUI()
@@ -60,7 +62,7 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
     // MARK: UI
 
     private func buildUI() {
-        guard let content = window?.contentView else { return }
+        guard let window else { return }
 
         configure(backButton, symbol: "chevron.left", tip: "Atrás", action: #selector(goBack(_:)))
         configure(forwardButton, symbol: "chevron.right", tip: "Adelante", action: #selector(goForward(_:)))
@@ -71,18 +73,12 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         pathField.lineBreakMode = .byTruncatingHead
         pathField.cell?.isScrollable = true
         pathField.cell?.wraps = false
+        pathField.bezelStyle = .roundedBezel
         pathField.placeholderString = "Ruta"
 
         searchField.delegate = self
         searchField.placeholderString = "Filtrar"
         searchField.sendsSearchStringImmediately = true
-        searchField.widthAnchor.constraint(equalToConstant: 200).isActive = true
-
-        let bar = NSStackView(views: [backButton, forwardButton, upButton, pathField, searchField])
-        bar.orientation = .horizontal
-        bar.spacing = 6
-        bar.edgeInsets = NSEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
-        pathField.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
         outline.browser = self
         setupOutline()
@@ -91,42 +87,36 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         listScroll.hasVerticalScroller = true
         listScroll.hasHorizontalScroller = true
         listScroll.autohidesScrollers = true
+        listScroll.drawsBackground = false
+        let listController = NSViewController()
+        listController.view = listScroll
 
-        let split = NSSplitView()
-        split.isVertical = true
-        split.dividerStyle = .thin
-        split.addArrangedSubview(listScroll)
-        split.addArrangedSubview(favorites.view)
-        split.setHoldingPriority(.defaultLow, forSubviewAt: 0)
-        split.setHoldingPriority(.defaultHigh, forSubviewAt: 1)
+        let sidebarController = NSViewController()
+        sidebarController.view = favorites.view
 
-        let line = NSBox()
-        line.boxType = .separator
+        let split = NSSplitViewController()
+        let sidebarItem = NSSplitViewItem(sidebarWithViewController: sidebarController)
+        sidebarItem.minimumThickness = 160
+        sidebarItem.maximumThickness = 320
+        sidebarItem.canCollapse = true
+        let listItem = NSSplitViewItem(viewController: listController)
+        listItem.minimumThickness = 360
+        split.addSplitViewItem(sidebarItem)
+        split.addSplitViewItem(listItem)
+        split.splitView.autosaveName = "ExplorerSidebar"
+        window.contentViewController = split
+        window.setContentSize(NSSize(width: 1100, height: 680))
 
-        for view in [bar, line, split] as [NSView] {
-            view.translatesAutoresizingMaskIntoConstraints = false
-            content.addSubview(view)
-        }
-        NSLayoutConstraint.activate([
-            bar.topAnchor.constraint(equalTo: content.topAnchor),
-            bar.leadingAnchor.constraint(equalTo: content.leadingAnchor),
-            bar.trailingAnchor.constraint(equalTo: content.trailingAnchor),
-            line.topAnchor.constraint(equalTo: bar.bottomAnchor),
-            line.leadingAnchor.constraint(equalTo: content.leadingAnchor),
-            line.trailingAnchor.constraint(equalTo: content.trailingAnchor),
-            split.topAnchor.constraint(equalTo: line.bottomAnchor),
-            split.leadingAnchor.constraint(equalTo: content.leadingAnchor),
-            split.trailingAnchor.constraint(equalTo: content.trailingAnchor),
-            split.bottomAnchor.constraint(equalTo: content.bottomAnchor),
-            favorites.view.widthAnchor.constraint(greaterThanOrEqualToConstant: 150),
-            listScroll.widthAnchor.constraint(greaterThanOrEqualToConstant: 350),
-        ])
-        split.layoutSubtreeIfNeeded()
-        split.setPosition(content.bounds.width - 210, ofDividerAt: 0)
+        let toolbar = NSToolbar(identifier: "ExplorerToolbar")
+        toolbar.delegate = self
+        toolbar.displayMode = .iconOnly
+        toolbar.allowsUserCustomization = false
+        window.toolbar = toolbar
     }
 
     private func configure(_ button: NSButton, symbol: String, tip: String, action: Selector) {
         button.bezelStyle = .texturedRounded
+        button.isBordered = true
         button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: tip)
         button.toolTip = tip
         button.target = self
@@ -151,11 +141,13 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         outline.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
         outline.autosaveName = "ExplorerColumns"
         outline.autosaveTableColumns = true
-        outline.style = .fullWidth
+        outline.style = .inset
         outline.usesAlternatingRowBackgroundColors = true
         outline.allowsMultipleSelection = true
         outline.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
-        outline.indentationPerLevel = 14
+        outline.indentationPerLevel = 16
+        outline.rowHeight = 24
+        outline.intercellSpacing = NSSize(width: 10, height: 2)
         outline.dataSource = self
         outline.delegate = self
         outline.target = self
@@ -509,6 +501,57 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
     override func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
         panel.dataSource = nil
         panel.delegate = nil
+    }
+}
+
+private extension NSToolbarItem.Identifier {
+    static let navigation = NSToolbarItem.Identifier("navigation")
+    static let up = NSToolbarItem.Identifier("up")
+    static let path = NSToolbarItem.Identifier("path")
+    static let search = NSToolbarItem.Identifier("search")
+}
+
+extension BrowserWindowController: NSToolbarDelegate {
+    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        [.toggleSidebar, .sidebarTrackingSeparator, .navigation, .up, .path, .search]
+    }
+
+    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        toolbarDefaultItemIdentifiers(toolbar)
+    }
+
+    func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier id: NSToolbarItem.Identifier,
+                 willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        switch id {
+        case .navigation:
+            let stack = NSStackView(views: [backButton, forwardButton])
+            stack.spacing = 2
+            let item = NSToolbarItem(itemIdentifier: id)
+            item.view = stack
+            item.label = "Atrás/Adelante"
+            return item
+        case .up:
+            let item = NSToolbarItem(itemIdentifier: id)
+            item.view = upButton
+            item.label = "Subir"
+            return item
+        case .path:
+            let item = NSToolbarItem(itemIdentifier: id)
+            item.view = pathField
+            item.label = "Ruta"
+            item.visibilityPriority = .high
+            pathField.widthAnchor.constraint(greaterThanOrEqualToConstant: 240).isActive = true
+            pathField.widthAnchor.constraint(lessThanOrEqualToConstant: 2000).isActive = true
+            return item
+        case .search:
+            let item = NSSearchToolbarItem(itemIdentifier: id)
+            item.searchField = searchField
+            item.preferredWidthForSearchField = 200
+            item.label = "Filtrar"
+            return item
+        default:
+            return nil
+        }
     }
 }
 

@@ -13,8 +13,8 @@ Explorador de archivos propio para macOS, para usar en lugar de Finder.
 
 - Sin pestañas. Varias ventanas: `cmd+n` abre otra en la misma carpeta.
 - Al abrir la app: una ventana en la carpeta de inicio (por defecto el home; configurable en Ajustes). No recuerda ventanas.
-- Arriba: atrás, adelante, subir, la ruta completa editable y el filtro.
-- Centro: la lista. A la derecha: Favoritos.
+- Aspecto Finder: barra lateral translúcida a la izquierda con Favoritos (se oculta con su botón); en la barra de la ventana atrás, adelante, subir, la ruta completa editable y el filtro.
+- A la derecha de la barra lateral, la lista.
 
 ## Lista
 
@@ -35,7 +35,7 @@ Explorador de archivos propio para macOS, para usar en lugar de Finder.
 
 - Filtra por nombre en la carpeta actual, mientras escribes (`cmd+f`). Flecha abajo pasa a la lista.
 
-## Favoritos (panel derecho)
+## Favoritos (barra lateral izquierda)
 
 - Solo carpetas.
 - Arrastrar una carpeta entre dos favoritos la añade ahí. Arrastrar dentro del panel los reordena.
