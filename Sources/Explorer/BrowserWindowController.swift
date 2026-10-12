@@ -64,9 +64,9 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
     private func buildUI() {
         guard let window else { return }
 
-        configure(backButton, symbol: "chevron.left", tip: "Atrás", action: #selector(goBack(_:)))
-        configure(forwardButton, symbol: "chevron.right", tip: "Adelante", action: #selector(goForward(_:)))
-        configure(upButton, symbol: "arrow.up", tip: "Carpeta superior", action: #selector(goUp(_:)))
+        configure(backButton, symbol: "chevron.left", tip: "Back", action: #selector(goBack(_:)))
+        configure(forwardButton, symbol: "chevron.right", tip: "Forward", action: #selector(goForward(_:)))
+        configure(upButton, symbol: "arrow.up", tip: "Enclosing Folder", action: #selector(goUp(_:)))
 
         pathField.delegate = self
         pathField.font = .systemFont(ofSize: NSFont.systemFontSize)
@@ -74,10 +74,10 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         pathField.cell?.isScrollable = true
         pathField.cell?.wraps = false
         pathField.bezelStyle = .roundedBezel
-        pathField.placeholderString = "Ruta"
+        pathField.placeholderString = "Path"
 
         searchField.delegate = self
-        searchField.placeholderString = "Filtrar"
+        searchField.placeholderString = "Filter"
         searchField.sendsSearchStringImmediately = true
 
         outline.browser = self
@@ -125,8 +125,8 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
 
     private func setupOutline() {
         let columns: [(String, String, CGFloat)] = [
-            ("name", "Nombre", 360), ("date", "Fecha de modificación", 170),
-            ("size", "Tamaño", 90), ("kind", "Tipo", 150),
+            ("name", "Name", 360), ("date", "Date Modified", 170),
+            ("size", "Size", 90), ("kind", "Kind", 150),
         ]
         for (id, title, width) in columns {
             let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(id))
@@ -345,9 +345,10 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         let op = BlockOperation()
         op.addExecutionBlock { [weak op, weak self] in
             let size = FolderSizes.compute(item.url.resolvingSymlinksInPath()) { op?.isCancelled ?? true }
+            let cancelled = op?.isCancelled ?? true
             DispatchQueue.main.async {
                 self?.pendingSizes.remove(path)
-                if let size, op?.isCancelled == false { FolderSizes.shared.store(path, size: size) }
+                if let size, !cancelled { FolderSizes.shared.store(path, size: size) }
             }
         }
         sizeQueue.addOperation(op)
@@ -545,17 +546,17 @@ extension BrowserWindowController: NSToolbarDelegate {
             stack.spacing = 2
             let item = NSToolbarItem(itemIdentifier: id)
             item.view = stack
-            item.label = "Atrás/Adelante"
+            item.label = "Back/Forward"
             return item
         case .up:
             let item = NSToolbarItem(itemIdentifier: id)
             item.view = upButton
-            item.label = "Subir"
+            item.label = "Up"
             return item
         case .path:
             let item = NSToolbarItem(itemIdentifier: id)
             item.view = pathField
-            item.label = "Ruta"
+            item.label = "Path"
             item.visibilityPriority = .high
             pathField.widthAnchor.constraint(greaterThanOrEqualToConstant: 240).isActive = true
             pathField.widthAnchor.constraint(lessThanOrEqualToConstant: 2000).isActive = true
@@ -564,7 +565,7 @@ extension BrowserWindowController: NSToolbarDelegate {
             let item = NSSearchToolbarItem(itemIdentifier: id)
             item.searchField = searchField
             item.preferredWidthForSearchField = 200
-            item.label = "Filtrar"
+            item.label = "Filter"
             return item
         default:
             return nil

@@ -179,15 +179,15 @@ extension BrowserWindowController: NSMenuDelegate {
 
     private func buildBlankMenu(_ menu: NSMenu) {
         let dir = current
-        menu.add("Nueva carpeta") { [weak self] in self?.create(folder: true, in: dir) }
-        menu.add("Nuevo archivo") { [weak self] in self?.create(folder: false, in: dir) }
+        menu.add("New Folder") { [weak self] in self?.create(folder: true, in: dir) }
+        menu.add("New File") { [weak self] in self?.create(folder: false, in: dir) }
         menu.separator()
-        menu.add("Pegar", enabled: FileClipboard.hasFiles) { [weak self] in self?.paste(into: dir) }
+        menu.add("Paste", enabled: FileClipboard.hasFiles) { [weak self] in self?.paste(into: dir) }
         menu.separator()
-        menu.add("Copiar ruta") { FileOps.copyPaths([dir]) }
-        menu.add("Abrir terminal aquí") { FileOps.openTerminal(at: dir) }
-        menu.add("Abrir en den", enabled: FileOps.denCommand != nil) { FileOps.openInDen([dir]) }
-        menu.add("Añadir a Favoritos") { Settings.addFavorite(dir) }
+        menu.add("Copy Path") { FileOps.copyPaths([dir]) }
+        menu.add("Open Terminal Here") { FileOps.openTerminal(at: dir) }
+        menu.add("Open in den", enabled: FileOps.denCommand != nil) { FileOps.openInDen([dir]) }
+        menu.add("Add to Favorites") { Settings.addFavorite(dir) }
         menu.separator()
         addHiddenToggle(menu)
     }
@@ -197,66 +197,66 @@ extension BrowserWindowController: NSMenuDelegate {
         let clicked = outline.item(atRow: outline.clickedRow) as? FileItem
         let urls = items.map(\.url)
 
-        menu.add("Abrir") { [weak self] in self?.open(items) }
+        menu.add("Open") { [weak self] in self?.open(items) }
         if let single, single.isFolder {
-            menu.add("Abrir en nueva ventana") { AppDelegate.shared.openWindow(at: single.url) }
+            menu.add("Open in New Window") { AppDelegate.shared.openWindow(at: single.url) }
         }
         if let single, !single.isFolder {
             if !Opener.opensInPreview(single.url) {
-                menu.add("Previsualizar") { [weak self] in self?.preview(single) }
+                menu.add("Preview") { [weak self] in self?.preview(single) }
             }
             let previewSingle: () -> Void = { [weak self] in self?.preview(single) }
-            let openWith = NSMenuItem(title: "Abrir con", action: nil, keyEquivalent: "")
+            let openWith = NSMenuItem(title: "Open With", action: nil, keyEquivalent: "")
             openWith.submenu = openWithMenu(for: single.url, remember: false, preview: previewSingle)
             menu.addItem(openWith)
             let ext = single.url.pathExtension.lowercased()
             if !ext.isEmpty {
-                let always = NSMenuItem(title: "Abrir siempre .\(ext) con", action: nil, keyEquivalent: "")
+                let always = NSMenuItem(title: "Always Open .\(ext) With", action: nil, keyEquivalent: "")
                 always.submenu = openWithMenu(for: single.url, remember: true, preview: previewSingle)
                 menu.addItem(always)
                 if Settings.openWith[ext] != nil {
-                    menu.add("Quitar programa asignado a .\(ext)") { Settings.openWith[ext] = nil }
+                    menu.add("Forget App for .\(ext)") { Settings.openWith[ext] = nil }
                 }
             }
         }
-        menu.add("Abrir en den", enabled: FileOps.denCommand != nil) { FileOps.openInDen(urls) }
-        menu.add("Vista rápida") { [weak self] in
+        menu.add("Open in den", enabled: FileOps.denCommand != nil) { FileOps.openInDen(urls) }
+        menu.add("Quick Look") { [weak self] in
             guard let self else { return }
             self.selectURLs(urls)
             self.toggleQuickLook(nil)
         }
         menu.separator()
-        menu.add(items.count == 1 ? "Copiar ruta" : "Copiar rutas") { FileOps.copyPaths(urls) }
-        menu.add("Mostrar en Finder") { NSWorkspace.shared.activateFileViewerSelecting(urls) }
+        menu.add(items.count == 1 ? "Copy Path" : "Copy Paths") { FileOps.copyPaths(urls) }
+        menu.add("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting(urls) }
         menu.separator()
-        menu.add("Cortar") { FileClipboard.write(urls, cut: true) }
-        menu.add("Copiar") { FileClipboard.write(urls, cut: false) }
+        menu.add("Cut") { FileClipboard.write(urls, cut: true) }
+        menu.add("Copy") { FileClipboard.write(urls, cut: false) }
         let pasteDir = folderFor(clicked)
-        menu.add(clicked?.isFolder == true ? "Pegar dentro" : "Pegar", enabled: FileClipboard.hasFiles) { [weak self] in
+        menu.add(clicked?.isFolder == true ? "Paste Inside" : "Paste", enabled: FileClipboard.hasFiles) { [weak self] in
             self?.paste(into: pasteDir)
         }
         menu.separator()
         if let single {
-            menu.add("Renombrar") { [weak self] in self?.beginRename(single) }
+            menu.add("Rename") { [weak self] in self?.beginRename(single) }
         }
-        menu.add("Mover a la Papelera") { FileOps.trash(urls) }
+        menu.add("Move to Trash") { FileOps.trash(urls) }
         menu.separator()
         let dir = folderFor(clicked)
-        let inside = clicked?.isFolder == true ? " dentro" : ""
-        menu.add("Nueva carpeta\(inside)") { [weak self] in self?.create(folder: true, in: dir) }
-        menu.add("Nuevo archivo\(inside)") { [weak self] in self?.create(folder: false, in: dir) }
+        let inside = clicked?.isFolder == true ? " Inside" : ""
+        menu.add("New Folder\(inside)") { [weak self] in self?.create(folder: true, in: dir) }
+        menu.add("New File\(inside)") { [weak self] in self?.create(folder: false, in: dir) }
         menu.separator()
-        menu.add("Abrir terminal aquí") { FileOps.openTerminal(at: dir) }
+        menu.add("Open Terminal Here") { FileOps.openTerminal(at: dir) }
         let folders = items.filter(\.isFolder)
         if !folders.isEmpty {
-            menu.add("Añadir a Favoritos") { folders.forEach { Settings.addFavorite($0.url) } }
+            menu.add("Add to Favorites") { folders.forEach { Settings.addFavorite($0.url) } }
         }
         menu.separator()
         addHiddenToggle(menu)
     }
 
     private func addHiddenToggle(_ menu: NSMenu) {
-        menu.add(Settings.showHidden ? "Ocultar archivos ocultos" : "Mostrar archivos ocultos") {
+        menu.add(Settings.showHidden ? "Hide Hidden Files" : "Show Hidden Files") {
             Settings.showHidden.toggle()
         }
     }

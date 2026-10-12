@@ -107,7 +107,7 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate, NSToo
         kind = Opener.kind(of: url)
         image = nil
         fitting = true
-        window.title = "\(url.lastPathComponent) · \(index + 1) de \(urls.count)"
+        window.title = "\(url.lastPathComponent) · \(index + 1) of \(urls.count)"
         window.representedURL = url
 
         switch kind {
@@ -245,7 +245,7 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate, NSToo
         do {
             try ImageFile.turn(url, clockwise: clockwise)
         } catch {
-            return showError("No se puede girar: \(error.localizedDescription)")
+            return showError("Cannot rotate: \(error.localizedDescription)")
         }
         let wasFitting = fitting
         image = ImageFile.load(url)
@@ -294,11 +294,11 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate, NSToo
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier id: NSToolbarItem.Identifier,
                  willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
         let specs: [NSToolbarItem.Identifier: (String, String, Selector)] = [
-            .turnLeft: ("Girar a la izquierda (⌘L)", "rotate.left", #selector(turnLeft)),
-            .turnRight: ("Girar a la derecha (⌘R)", "rotate.right", #selector(turnRight)),
-            .copyImage: ("Copiar imagen (⌘C)", "doc.on.doc", #selector(copyImage)),
-            .copyPath: ("Copiar ruta (⌥⌘C)", "link", #selector(copyPath)),
-            .openApp: ("Abrir en su app", "arrow.up.forward.app", #selector(openInApp)),
+            .turnLeft: ("Rotate Left (⌘L)", "rotate.left", #selector(turnLeft)),
+            .turnRight: ("Rotate Right (⌘R)", "rotate.right", #selector(turnRight)),
+            .copyImage: ("Copy Image (⌘C)", "doc.on.doc", #selector(copyImage)),
+            .copyPath: ("Copy Path (⌥⌘C)", "link", #selector(copyPath)),
+            .openApp: ("Open in Its App", "arrow.up.forward.app", #selector(openInApp)),
         ]
         guard let (label, symbol, action) = specs[id] else { return nil }
         let item = NSToolbarItem(itemIdentifier: id)

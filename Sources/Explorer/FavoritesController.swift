@@ -78,7 +78,7 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if row == 0 {
             let header = NSTableCellView()
-            let text = NSTextField(labelWithString: "Favoritos")
+            let text = NSTextField(labelWithString: "Favorites")
             text.font = .systemFont(ofSize: NSFont.smallSystemFontSize, weight: .semibold)
             text.textColor = .secondaryLabelColor
             text.translatesAutoresizingMaskIntoConstraints = false
@@ -191,14 +191,14 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         menu.removeAllItems()
         guard let index = index(table.clickedRow) else { return }
         let url = items[index]
-        menu.add("Abrir") { [weak self] in self?.browser?.navigate(to: url) }
-        menu.add("Abrir en nueva ventana") { AppDelegate.shared.openWindow(at: url) }
-        menu.add("Abrir en den", enabled: FileOps.denCommand != nil) { FileOps.openInDen([url]) }
+        menu.add("Open") { [weak self] in self?.browser?.navigate(to: url) }
+        menu.add("Open in New Window") { AppDelegate.shared.openWindow(at: url) }
+        menu.add("Open in den", enabled: FileOps.denCommand != nil) { FileOps.openInDen([url]) }
         menu.separator()
-        menu.add("Copiar ruta") { FileOps.copyPaths([url]) }
-        menu.add("Abrir terminal aquí") { FileOps.openTerminal(at: url) }
-        menu.add("Pegar dentro", enabled: FileClipboard.hasFiles) { FileClipboard.paste(into: url) }
+        menu.add("Copy Path") { FileOps.copyPaths([url]) }
+        menu.add("Open Terminal Here") { FileOps.openTerminal(at: url) }
+        menu.add("Paste Inside", enabled: FileClipboard.hasFiles) { FileClipboard.paste(into: url) }
         menu.separator()
-        menu.add("Quitar de Favoritos") { Settings.removeFavorite(url) }
+        menu.add("Remove from Favorites") { Settings.removeFavorite(url) }
     }
 }

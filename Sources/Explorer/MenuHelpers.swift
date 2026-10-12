@@ -30,7 +30,7 @@ extension NSMenu {
 func openWithMenu(for url: URL, remember: Bool, preview: @escaping () -> Void) -> NSMenu {
     let menu = NSMenu()
     let ext = url.pathExtension.lowercased()
-    var previewTitle = "Previsualizar"
+    var previewTitle = "Preview"
     if remember, Opener.opensInPreview(url) { previewTitle += " ✓" }
     let previewItem = menu.add(previewTitle) {
         if remember { Settings.openWith[ext] = Opener.previewID }
@@ -47,7 +47,7 @@ func openWithMenu(for url: URL, remember: Bool, preview: @escaping () -> Void) -
     var seen = Set<String>()
     for app in apps where seen.insert(app.path).inserted {
         var title = FileManager.default.displayName(atPath: app.path)
-        if app.path == defaultApp?.path { title += " (predeterminada)" }
+        if app.path == defaultApp?.path { title += " (default)" }
         if remember, Settings.openWith[ext] == app.path { title += " ✓" }
         let item = menu.add(title) {
             if remember { Settings.openWith[ext] = app.path }
@@ -58,7 +58,7 @@ func openWithMenu(for url: URL, remember: Bool, preview: @escaping () -> Void) -
         item.image = icon
     }
     menu.separator()
-    menu.add("Otra…") {
+    menu.add("Other…") {
         let panel = NSOpenPanel()
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         panel.allowedContentTypes = [.application]

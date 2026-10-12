@@ -9,8 +9,8 @@ enum ImageFile {
 
         var errorDescription: String? {
             switch self {
-            case .unreadable: return "No se puede leer la imagen."
-            case .unwritable: return "No se puede guardar la imagen."
+            case .unreadable: return "Cannot read the image."
+            case .unwritable: return "Cannot save the image."
             }
         }
     }

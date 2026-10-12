@@ -1,124 +1,128 @@
 # Explorer
 
-Explorador de archivos propio para macOS, para usar en lugar de Finder.
+A file browser for macOS, built to be used instead of Finder.
 
-## Tecnología
+## Technology
 
-- App nativa en Swift + AppKit, Swift Package Manager, sin Xcode project.
-- `./build.sh` genera `build/Explorer.app` firmada con el certificado Apple Development (firma estable: macOS no vuelve a pedir permisos de Escritorio/Documentos en cada build).
-- `./install.sh` la copia a `~/Applications` y la abre.
-- No sustituye a Finder como app por defecto.
+- Native app in Swift + AppKit, Swift Package Manager, no Xcode project.
+- `./build.sh` builds `build/Explorer.app`, signed with your Apple Development certificate when there is one (a stable signature means macOS doesn't ask again for Desktop/Documents access after every build).
+- `./install.sh` copies it to `~/Applications` and opens it.
+- It does not replace Finder as the default app.
 
-## Ventana
+## Window
 
-- Sin pestañas. Varias ventanas: `cmd+n` abre otra en la misma carpeta.
-- Al abrir la app: una ventana en la carpeta de inicio (por defecto el home; configurable en Ajustes). No recuerda ventanas.
-- Aspecto Finder: barra lateral translúcida a la izquierda con Favoritos (se oculta con su botón); en la barra de la ventana atrás, adelante, subir, la ruta completa editable y el filtro.
-- A la derecha de la barra lateral, la lista.
+- No tabs. Several windows: `cmd+n` opens another one on the same folder.
+- On launch: one window on the start folder (home by default; configurable in Settings). Windows are not restored.
+- Finder look: translucent sidebar on the left with Favorites (hidden with its button); the toolbar has back, forward, up, the full editable path and the filter.
+- Next to the sidebar, the list.
 
-## Lista
+## List
 
-- Siempre en modo lista. Columnas: Nombre, Fecha de modificación, Tamaño, Tipo.
-- Clic en la cabecera ordena; las carpetas siempre arriba.
-- El triángulo despliega la carpeta en el árbol; doble clic entra en ella. Doble clic en un archivo lo abre.
-- Tamaño de carpeta recursivo en la columna Tamaño: se calcula en segundo plano (muestra "…" mientras tanto), se cancela al cambiar de carpeta y se guarda en caché. Si algo cambia dentro, el valor viejo se queda hasta que se vuelve a pintar la fila (como mucho uno cada 30 s por carpeta).
-- La lista se actualiza sola cuando cambian los archivos (FSEvents).
-- Los elementos cortados se ven atenuados.
+- Always a list. Columns: Name, Date Modified, Size, Kind.
+- Clicking a header sorts; folders always come first.
+- The disclosure triangle expands a folder in place; double-click goes into it. Double-clicking a file opens it.
+- Recursive folder size in the Size column: computed in the background ("…" meanwhile), cancelled when you leave the folder, cached. When something changes inside, the old value stays until the row is drawn again (at most one recompute every 30 s per folder).
+- The list updates itself when files change (FSEvents).
+- Cut items are dimmed.
 
-## Ruta
+## Path
 
-- Muestra la ruta completa y se puede editar. Enter va a la carpeta; si es un archivo, va a su carpeta y lo selecciona. `~` vale.
-- Tab autocompleta como en la terminal.
-- `cmd+l` o `cmd+shift+g` ponen el foco en la ruta. Esc vuelve a la lista.
+- Shows the full path and can be edited. Enter goes to the folder; for a file, goes to its folder and selects it. `~` works.
+- Tab completes like a shell.
+- `cmd+l` or `cmd+shift+g` focus the path. Esc goes back to the list.
 
-## Filtro
+## Filter
 
-- Filtra por nombre en la carpeta actual, mientras escribes (`cmd+f`). Flecha abajo pasa a la lista.
+- Filters the current folder by name as you type (`cmd+f`). Down arrow moves to the list.
 
-## Favoritos (barra lateral izquierda)
+## Favorites (left sidebar)
 
-- Solo carpetas.
-- Arrastrar una carpeta entre dos favoritos la añade ahí. Arrastrar dentro del panel los reordena.
-- Arrastrar archivos encima de un favorito los mueve a esa carpeta (con option, los copia).
-- Botón derecho: Abrir, Abrir en nueva ventana, Copiar ruta, Abrir terminal aquí, Quitar de Favoritos.
-- Por defecto: home, Escritorio, Documentos, Descargas.
+- Folders only.
+- Dropping a folder between two favorites adds it there. Dragging inside the sidebar reorders.
+- Dropping files on a favorite moves them into that folder (copies with option).
+- Right-click: Open, Open in New Window, Open in den, Copy Path, Open Terminal Here, Paste Inside, Remove from Favorites.
+- Defaults: home, Desktop, Documents, Downloads.
 
-## Botón derecho
+## Right-click
 
-Sobre un elemento:
+On an item:
 
-- Abrir / Abrir en nueva ventana (carpetas).
-- Abrir con ▸ (programas que pueden abrirlo) y Abrir siempre .ext con ▸ (lo recuerda la app, sin tocar Finder).
-- Vista rápida.
-- Copiar ruta (siempre). Mostrar en Finder.
-- Cortar, Copiar, Pegar.
-- Renombrar, Mover a la Papelera.
-- Nueva carpeta / Nuevo archivo: dentro del elemento si es carpeta; en su carpeta si es archivo.
-- Abrir terminal aquí. Añadir a Favoritos (carpetas).
-- Mostrar/Ocultar archivos ocultos.
+- Open / Open in New Window (folders).
+- Open in den.
+- Preview (when the type doesn't open in the previewer already).
+- Open With ▸ (Preview plus every app that can open it) and Always Open .ext With ▸ (remembered by Explorer, Finder is untouched).
+- Quick Look.
+- Copy Path (always). Show in Finder.
+- Cut, Copy, Paste.
+- Rename, Move to Trash.
+- New Folder / New File: inside the item if it's a folder; next to it if it's a file.
+- Open Terminal Here. Add to Favorites (folders).
+- Show/Hide Hidden Files.
 
-Sobre zona blanca (la carpeta que estás viendo): Nueva carpeta, Nuevo archivo, Pegar, Copiar ruta, Abrir terminal aquí, Añadir a Favoritos, Mostrar/Ocultar archivos ocultos.
+On empty space (the folder you are looking at): New Folder, New File, Paste, Copy Path, Open Terminal Here, Open in den, Add to Favorites, Show/Hide Hidden Files.
 
-## Arrastrar, cortar, copiar y pegar
+## Drag, cut, copy and paste
 
-- Arrastrar entre ventanas y desde/hacia otras apps (Finder, escritorio, Mail).
-- Al arrastrar: mismo disco = mover; otro disco = copiar; con option = copiar.
-- `cmd+c` / `cmd+x` / `cmd+v` como en Windows/Linux: cortar + pegar mueve. Pegar va a la carpeta actual (o a la carpeta del botón derecho).
-- Copiar archivos desde Finder y pegar aquí funciona, y al revés.
-- Si el nombre existe: "nombre 2". Copiar en la misma carpeta: "nombre copia".
+- Drag between windows and from/to other apps (Finder, Desktop, Mail).
+- When dragging: same disk = move; another disk = copy; with option = copy.
+- `cmd+c` / `cmd+x` / `cmd+v` like Windows/Linux: cut + paste moves. Paste goes into the current folder (or the right-clicked folder).
+- Copying files in Finder and pasting here works, and the other way round.
+- Name clashes: "name 2". Copying into the same folder: "name copy".
 
-## Previsualizar
+## Preview
 
-- Visor propio en una sola ventana que se reutiliza. ← y → pasan al archivo anterior/siguiente de la carpeta, en el orden de la lista (con el filtro aplicado). Esc cierra.
-- Imágenes: girar (⌘L / ⌘R, se guarda al instante; en JPEG sólo cambia la orientación EXIF, sin recomprimir), copiar imagen (⌘C), copiar ruta (⌥⌘C), zoom con pellizco y doble clic (ajustar ↔ 100%).
-- Vídeo que reproduce macOS (mp4, mov, m4v…): reproductor integrado, lee del disco sin cargar el archivo entero (películas de varios GB). Espacio pausa.
-- Todo lo demás: la vista previa del sistema (PDF, texto, audio, Office…) dentro de la misma ventana.
-- Por defecto abren con Previsualizar las imágenes y los vídeos que reproduce macOS. Los vídeos que no (mkv, avi…) abren con VLC si está instalado.
-- Por tipo: "Abrir siempre .ext con ▸" tiene Previsualizar como primera opción. Si un tipo no abre con Previsualizar, el botón derecho tiene "Previsualizar". "Abrir con ▸" también la incluye.
+- One previewer window, reused. ← and → go to the previous/next file of the folder, in list order (with the filter applied). Esc closes it.
+- Images: rotate (⌘L / ⌘R, saved at once; for JPEG only the EXIF orientation changes, nothing is recompressed), copy image (⌘C), copy path (⌥⌘C), zoom with pinch and double-click (fit ↔ 100%).
+- Video macOS can play (mp4, mov, m4v…): built-in player, streamed from disk (multi-GB movies are fine). Space pauses.
+- Everything else: the system preview (PDF, text, audio, Office…) inside the same window.
+- By default images and the videos macOS can play open in the previewer. Other videos (mkv, avi…) open in VLC when it is installed.
+- Per type: "Always Open .ext With ▸" has Preview as its first option. If a type doesn't open in the previewer, right-click has "Preview". "Open With ▸" includes it too.
+- Opening a file with Explorer from another app previews it when its type opens in the previewer.
 
 ## Terminal
 
-- Abrir terminal aquí abre una instancia nueva de Ghostty en esa carpeta (`--working-directory`). Se puede cambiar en Ajustes.
+- Open Terminal Here launches a new Ghostty instance in that folder (`--working-directory`). Another terminal can be chosen in Settings.
 
 ## den
 
-- "Abrir en den" en todos los menús de botón derecho (elementos, zona blanca, Favoritos): ejecuta `den <ruta>`.
+- "Open in den" in every right-click menu (items, empty space, Favorites): runs `den <path>`.
 
-## Atajos
+## Shortcuts
 
-| Atajo | Acción |
+| Shortcut | Action |
 |---|---|
-| `cmd+n` | Nueva ventana (misma carpeta) |
-| `cmd+shift+n` | Nueva carpeta |
-| `cmd+option+n` | Nuevo archivo |
-| `cmd+[` / `cmd+]` | Atrás / Adelante |
-| `cmd+↑` | Carpeta superior |
-| `cmd+↓` | Abrir |
-| Enter | Renombrar |
-| Espacio | Previsualizar (en el visor: cierra; en vídeo: pausa) |
-| `cmd+y` | Vista rápida de macOS |
-| `cmd+backspace` | Mover a la Papelera |
-| `cmd+option+c` | Copiar ruta |
-| `cmd+option+t` | Abrir terminal aquí |
-| `cmd+shift+.` | Mostrar/ocultar archivos ocultos |
-| `cmd+f` | Filtro |
-| `cmd+l`, `cmd+shift+g` | Editar ruta |
-| `cmd+,` | Ajustes |
-| `cmd+z` / `cmd+shift+z` | Deshacer / Rehacer (mover, copiar, renombrar, papelera, crear) |
-| Esc | Cancela el corte pendiente |
-| `⌥⌘E` (global) | Abre una ventana desde cualquier app |
+| `cmd+n` | New window (same folder) |
+| `cmd+shift+n` | New folder |
+| `cmd+option+n` | New file |
+| `cmd+[` / `cmd+]` | Back / Forward |
+| `cmd+↑` | Enclosing folder |
+| `cmd+↓` | Open |
+| Enter | Rename |
+| Space | Preview (in the previewer: closes; on video: pauses) |
+| `cmd+y` | macOS Quick Look |
+| `cmd+backspace` | Move to Trash |
+| `cmd+option+c` | Copy path |
+| `cmd+option+t` | Open terminal here |
+| `cmd+shift+.` | Show/hide hidden files |
+| `cmd+f` | Filter |
+| `cmd+l`, `cmd+shift+g` | Edit path |
+| `cmd+,` | Settings |
+| `cmd+z` / `cmd+shift+z` | Undo / Redo (move, copy, rename, trash, create) |
+| Esc | Cancels a pending cut |
+| `⌥⌘E` (global) | Opens a window from any app |
 
-## Arranque
+## Launch
 
-- La app arranca al iniciar sesión (sin abrir ventana) para que `⌥⌘E` funcione siempre. Se desactiva en Ajustes.
+- Explorer starts at login (without opening a window) so `⌥⌘E` always works. It can be turned off in Settings.
 
-## Ajustes
+## Settings
 
-- Carpeta de inicio.
+- Start folder.
 - Terminal.
-- Mostrar archivos ocultos.
-- Lista de "Abrir siempre con" por extensión, con opción de quitar.
+- Show hidden files.
+- Open at login.
+- The "Always open with" list per extension, with a − button to remove entries.
 
-## Pendiente (después)
+## Later
 
-- Progreso visible en copias grandes.
+- Visible progress for large copies.

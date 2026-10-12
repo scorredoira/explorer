@@ -15,8 +15,8 @@ private final class DeletableTableView: NSTableView {
 final class SettingsWindowController: NSWindowController, NSTableViewDataSource, NSTableViewDelegate {
     private let homeLabel = NSTextField(labelWithString: "")
     private let terminalLabel = NSTextField(labelWithString: "")
-    private let hiddenCheck = NSButton(checkboxWithTitle: "Mostrar archivos ocultos", target: nil, action: nil)
-    private let loginCheck = NSButton(checkboxWithTitle: "Abrir al iniciar sesión (para que ⌥⌘E funcione siempre)", target: nil, action: nil)
+    private let hiddenCheck = NSButton(checkboxWithTitle: "Show Hidden Files", target: nil, action: nil)
+    private let loginCheck = NSButton(checkboxWithTitle: "Open at login (so ⌥⌘E always works)", target: nil, action: nil)
     private let table = DeletableTableView()
     private let removeButton = NSButton()
     private var rows: [(ext: String, app: String)] = []
@@ -25,7 +25,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 520, height: 420),
             styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        window.title = "Ajustes"
+        window.title = "Settings"
         super.init(window: window)
         build()
         refresh()
@@ -55,7 +55,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         terminalLabel.lineBreakMode = .byTruncatingMiddle
 
         let grid = NSGridView(views: [
-            [NSTextField(labelWithString: "Carpeta de inicio:"), homeLabel, homeButton],
+            [NSTextField(labelWithString: "Start folder:"), homeLabel, homeButton],
             [NSTextField(labelWithString: "Terminal:"), terminalLabel, terminalButton],
             [NSGridCell.emptyContentView, hiddenCheck, NSGridCell.emptyContentView],
             [NSGridCell.emptyContentView, loginCheck, NSGridCell.emptyContentView],
@@ -66,8 +66,8 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         grid.rowSpacing = 10
         homeLabel.widthAnchor.constraint(equalToConstant: 300).isActive = true
 
-        let openWithTitle = NSTextField(labelWithString: "Abrir siempre con:")
-        for (id, title, width) in [("ext", "Extensión", 100.0), ("app", "Programa", 340.0)] {
+        let openWithTitle = NSTextField(labelWithString: "Always open with:")
+        for (id, title, width) in [("ext", "Extension", 100.0), ("app", "App", 340.0)] {
             let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(id))
             column.title = title
             column.width = width
@@ -82,7 +82,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         scroll.borderType = .bezelBorder
         removeButton.image = NSImage(named: NSImage.removeTemplateName)
         removeButton.bezelStyle = .smallSquare
-        removeButton.toolTip = "Quitar la asignación seleccionada"
+        removeButton.toolTip = "Remove the selected assignment"
         removeButton.target = self
         removeButton.action = #selector(removeAssignment)
         removeButton.isEnabled = false
@@ -164,7 +164,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         let isExt = tableColumn?.identifier.rawValue == "ext"
         let app = rows[row].app
         let value = isExt ? ".\(rows[row].ext)"
-            : app == Opener.previewID ? "Previsualizar" : FileManager.default.displayName(atPath: app)
+            : app == Opener.previewID ? "Preview" : FileManager.default.displayName(atPath: app)
         let text = NSTextField(labelWithString: value)
         text.lineBreakMode = .byTruncatingMiddle
         return text

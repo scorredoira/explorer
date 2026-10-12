@@ -22,7 +22,7 @@ enum FileOps {
                 }
                 if dir.standardizedFileURL.path == src.standardizedFileURL.path
                     || dir.standardizedFileURL.path.hasPrefix(src.standardizedFileURL.path + "/") {
-                    errors.append("No se puede meter «\(src.lastPathComponent)» dentro de sí misma.")
+                    errors.append("Cannot put “\(src.lastPathComponent)” inside itself.")
                     continue
                 }
                 let dest = uniqueURL(dir.appendingPathComponent(src.lastPathComponent), copy: !move && sameFolder)
@@ -42,10 +42,10 @@ enum FileOps {
                 if !done.isEmpty {
                     if move {
                         let back = done.map { (from: $0.to, to: $0.from) }
-                        registerUndo("Mover") { movePairs(back, name: "Mover") }
+                        registerUndo("Move") { movePairs(back, name: "Move") }
                     } else {
                         let copies = done.map(\.to)
-                        registerUndo("Copiar") { trash(copies, name: "Copiar") }
+                        registerUndo("Copy") { trash(copies, name: "Copy") }
                     }
                 }
                 if !errors.isEmpty { showError(errors.joined(separator: "\n")) }
@@ -78,7 +78,7 @@ enum FileOps {
         let dir = url.deletingLastPathComponent()
         let ext = url.pathExtension
         let base = ext.isEmpty ? url.lastPathComponent : url.deletingPathExtension().lastPathComponent
-        let stem = copy ? "\(base) copia" : base
+        let stem = copy ? "\(base) copy" : base
         var n = copy ? 1 : 2
         while true {
             let name = n == 1 ? stem : "\(stem) \(n)"
@@ -88,7 +88,7 @@ enum FileOps {
         }
     }
 
-    static func trash(_ urls: [URL], name: String = "Mover a la Papelera") {
+    static func trash(_ urls: [URL], name: String = "Move to Trash") {
         NSWorkspace.shared.recycle(urls) { trashed, error in
             DispatchQueue.main.async {
                 let back = trashed.map { (from: $0.value, to: $0.key) }
@@ -99,10 +99,10 @@ enum FileOps {
     }
 
     static func createFolder(in dir: URL) -> URL? {
-        let url = uniqueURL(dir.appendingPathComponent("carpeta sin título"))
+        let url = uniqueURL(dir.appendingPathComponent("untitled folder"))
         do {
             try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false)
-            registerUndo("Nueva carpeta") { trash([url], name: "Nueva carpeta") }
+            registerUndo("New Folder") { trash([url], name: "New Folder") }
             return url
         } catch {
             showError(error.localizedDescription)
@@ -111,12 +111,12 @@ enum FileOps {
     }
 
     static func createFile(in dir: URL) -> URL? {
-        let url = uniqueURL(dir.appendingPathComponent("archivo sin título"))
+        let url = uniqueURL(dir.appendingPathComponent("untitled file"))
         guard FileManager.default.createFile(atPath: url.path, contents: Data()) else {
-            showError("No se pudo crear el archivo en \(dir.path).")
+            showError("Could not create the file in \(dir.path).")
             return nil
         }
-        registerUndo("Nuevo archivo") { trash([url], name: "Nuevo archivo") }
+        registerUndo("New File") { trash([url], name: "New File") }
         return url
     }
 
@@ -124,7 +124,7 @@ enum FileOps {
         let dest = url.deletingLastPathComponent().appendingPathComponent(name)
         do {
             try FileManager.default.moveItem(at: url, to: dest)
-            registerUndo("Renombrar") { movePairs([(from: dest, to: url)], name: "Renombrar") }
+            registerUndo("Rename") { movePairs([(from: dest, to: url)], name: "Rename") }
             return dest
         } catch {
             showError(error.localizedDescription)
@@ -162,7 +162,7 @@ enum FileOps {
 
     static func openTerminal(at dir: URL) {
         guard let app = Settings.terminalApp else {
-            showError("No se encuentra la terminal. Elígela en Ajustes.")
+            showError("Terminal app not found. Choose one in Settings.")
             return
         }
         guard Bundle(url: app)?.bundleIdentifier == Settings.ghosttyBundleID else {
@@ -186,7 +186,7 @@ enum FileOps {
 
     static func openInDen(_ urls: [URL]) {
         guard let den = denCommand else {
-            showError("No se encuentra el comando den.")
+            showError("The den command was not found.")
             return
         }
         for url in urls {
@@ -255,7 +255,7 @@ enum FileClipboard {
 func showError(_ message: String) {
     let alert = NSAlert()
     alert.alertStyle = .warning
-    alert.messageText = "No se pudo completar"
+    alert.messageText = "Could not complete the operation"
     alert.informativeText = message
     alert.runModal()
 }
