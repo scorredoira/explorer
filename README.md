@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/screenshots/icon.png" width="128" alt="Explorer icon"></p>
+er<p align="center"><img src="docs/screenshots/icon.png" width="128" alt="Explorer icon"></p>
 
 # Explorer
 

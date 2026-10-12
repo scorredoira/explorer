@@ -193,6 +193,7 @@ enum FileOps {
             let process = Process()
             process.executableURL = den
             process.arguments = [url.path]
+            process.environment = ProcessInfo.processInfo.environment.filter { !$0.key.hasPrefix("DEN_") }
             do {
                 try process.run()
             } catch {
