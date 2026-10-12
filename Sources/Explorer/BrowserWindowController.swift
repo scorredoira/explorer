@@ -146,8 +146,9 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         outline.allowsMultipleSelection = true
         outline.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
         outline.indentationPerLevel = 16
-        outline.rowHeight = 24
+        outline.rowHeight = 18
         outline.intercellSpacing = NSSize(width: 10, height: 2)
+        outline.rowSizeStyle = .custom
         outline.dataSource = self
         outline.delegate = self
         outline.target = self
