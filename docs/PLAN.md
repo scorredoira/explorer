@@ -69,7 +69,11 @@ Sobre zona blanca (la carpeta que estás viendo): Nueva carpeta, Nuevo archivo, 
 
 ## Terminal
 
-- Abrir terminal aquí abre Ghostty en esa carpeta. Se puede cambiar en Ajustes.
+- Abrir terminal aquí abre una instancia nueva de Ghostty en esa carpeta (`--working-directory`). Se puede cambiar en Ajustes.
+
+## den
+
+- "Abrir en den" en todos los menús de botón derecho (elementos, zona blanca, Favoritos): ejecuta `den <ruta>`.
 
 ## Atajos
 

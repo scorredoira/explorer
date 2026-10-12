@@ -122,7 +122,40 @@ enum FileOps {
             showError("No se encuentra la terminal. Elígela en Ajustes.")
             return
         }
-        open(dir, with: app)
+        guard Bundle(url: app)?.bundleIdentifier == Settings.ghosttyBundleID else {
+            open(dir, with: app)
+            return
+        }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.createsNewApplicationInstance = true
+        configuration.arguments = ["--working-directory=\(dir.path)"]
+        NSWorkspace.shared.openApplication(at: app, configuration: configuration) { _, error in
+            if let error { DispatchQueue.main.async { showError(error.localizedDescription) } }
+        }
+    }
+
+    static let denCommand: URL? = {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        return ["\(home)/.local/bin/den", "/opt/homebrew/bin/den", "/usr/local/bin/den"]
+            .first { FileManager.default.isExecutableFile(atPath: $0) }
+            .map { URL(fileURLWithPath: $0) }
+    }()
+
+    static func openInDen(_ urls: [URL]) {
+        guard let den = denCommand else {
+            showError("No se encuentra el comando den.")
+            return
+        }
+        for url in urls {
+            let process = Process()
+            process.executableURL = den
+            process.arguments = [url.path]
+            do {
+                try process.run()
+            } catch {
+                showError(error.localizedDescription)
+            }
+        }
     }
 
     static func copyPaths(_ urls: [URL]) {

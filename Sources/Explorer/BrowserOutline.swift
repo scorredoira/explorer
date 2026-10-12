@@ -184,6 +184,7 @@ extension BrowserWindowController: NSMenuDelegate {
         menu.separator()
         menu.add("Copiar ruta") { FileOps.copyPaths([dir]) }
         menu.add("Abrir terminal aquí") { FileOps.openTerminal(at: dir) }
+        menu.add("Abrir en den", enabled: FileOps.denCommand != nil) { FileOps.openInDen([dir]) }
         menu.add("Añadir a Favoritos") { Settings.addFavorite(dir) }
         menu.separator()
         addHiddenToggle(menu)
@@ -212,6 +213,7 @@ extension BrowserWindowController: NSMenuDelegate {
                 }
             }
         }
+        menu.add("Abrir en den", enabled: FileOps.denCommand != nil) { FileOps.openInDen(urls) }
         menu.add("Vista rápida") { [weak self] in
             guard let self else { return }
             self.selectURLs(urls)

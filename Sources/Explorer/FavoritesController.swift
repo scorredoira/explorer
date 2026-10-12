@@ -193,6 +193,7 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         let url = items[index]
         menu.add("Abrir") { [weak self] in self?.browser?.navigate(to: url) }
         menu.add("Abrir en nueva ventana") { AppDelegate.shared.openWindow(at: url) }
+        menu.add("Abrir en den", enabled: FileOps.denCommand != nil) { FileOps.openInDen([url]) }
         menu.separator()
         menu.add("Copiar ruta") { FileOps.copyPaths([url]) }
         menu.add("Abrir terminal aquí") { FileOps.openTerminal(at: url) }
