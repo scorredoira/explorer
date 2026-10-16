@@ -17,6 +17,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     private let terminalLabel = NSTextField(labelWithString: "")
     private let hiddenCheck = NSButton(checkboxWithTitle: "Show Hidden Files", target: nil, action: nil)
     private let loginCheck = NSButton(checkboxWithTitle: "Open at login (so the shortcut always works)", target: nil, action: nil)
+    private let replaceFinderCheck = NSButton(checkboxWithTitle: "Use Explorer for \u{201C}Show in Finder\u{201D} in other apps", target: nil, action: nil)
     private let shortcutRecorder = ShortcutRecorder()
     private let table = DeletableTableView()
     private let removeButton = NSButton()
@@ -24,7 +25,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
 
     init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 450),
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 480),
             styleMask: [.titled, .closable], backing: .buffered, defer: false)
         window.title = "Settings"
         super.init(window: window)
@@ -52,6 +53,8 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         hiddenCheck.action = #selector(toggleHidden)
         loginCheck.target = self
         loginCheck.action = #selector(toggleLogin)
+        replaceFinderCheck.target = self
+        replaceFinderCheck.action = #selector(toggleReplaceFinder)
         shortcutRecorder.onChange = { Settings.globalShortcut = $0 }
         homeLabel.lineBreakMode = .byTruncatingMiddle
         terminalLabel.lineBreakMode = .byTruncatingMiddle
@@ -62,6 +65,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
             [NSTextField(labelWithString: "New window shortcut:"), shortcutRecorder, NSGridCell.emptyContentView],
             [NSGridCell.emptyContentView, hiddenCheck, NSGridCell.emptyContentView],
             [NSGridCell.emptyContentView, loginCheck, NSGridCell.emptyContentView],
+            [NSGridCell.emptyContentView, replaceFinderCheck, NSGridCell.emptyContentView],
         ])
         grid.column(at: 0).xPlacement = .trailing
         grid.rowAlignment = .firstBaseline
@@ -119,6 +123,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         shortcutRecorder.shortcut = Settings.globalShortcut
         hiddenCheck.state = Settings.showHidden ? .on : .off
         loginCheck.state = Settings.openAtLogin ? .on : .off
+        replaceFinderCheck.state = Settings.replacesFinder ? .on : .off
         rows = Settings.openWith.map { ($0.key, $0.value) }.sorted { $0.ext < $1.ext }
         table.reloadData()
         removeButton.isEnabled = table.selectedRow >= 0
@@ -150,6 +155,10 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     @objc private func toggleLogin() {
         Settings.openAtLogin = loginCheck.state == .on
         refresh()
+    }
+
+    @objc private func toggleReplaceFinder() {
+        Settings.replacesFinder = replaceFinderCheck.state == .on
     }
 
     func tableViewSelectionDidChange(_ notification: Notification) {

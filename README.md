@@ -17,6 +17,7 @@ A fast, no-nonsense file browser for macOS, built to replace Finder for everyday
 - **Favorites sidebar**, drag folders in and reorder them like in Finder.
 - **Open Terminal Here** (a new Ghostty window by default) and **Open in den**.
 - **`⌘E` from anywhere** opens a new window, like Win+E. You can change it in Settings.
+- **Replaces Finder for "Show in Finder"**: other apps reveal files and folders in Explorer. Turn it off in Settings. Apps already running pick it up after a restart.
 
 ## Built-in previewer
 

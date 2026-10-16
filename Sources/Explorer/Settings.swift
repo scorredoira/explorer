@@ -96,6 +96,28 @@ enum Settings {
         openAtLogin = true
     }
 
+    /// AppKit's "Finder replacement": "Show in Finder" in other apps reveals in Explorer instead.
+    /// Apps read it at launch, so already running ones keep using Finder until restarted.
+    static var replacesFinder: Bool {
+        get {
+            let value = CFPreferencesCopyValue("NSFileViewer" as CFString, kCFPreferencesAnyApplication,
+                                               kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? String
+            return value != nil && value == Bundle.main.bundleIdentifier
+        }
+        set {
+            let value = newValue ? Bundle.main.bundleIdentifier as CFString? : nil
+            CFPreferencesSetValue("NSFileViewer" as CFString, value, kCFPreferencesAnyApplication,
+                                  kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+            CFPreferencesSynchronize(kCFPreferencesAnyApplication, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+        }
+    }
+
+    static func setUpReplacesFinderOnce() {
+        guard !defaults.bool(forKey: "replacesFinderConfigured"), Bundle.main.bundleIdentifier != nil else { return }
+        defaults.set(true, forKey: "replacesFinderConfigured")
+        replacesFinder = true
+    }
+
     static func addFavorite(_ url: URL, at index: Int? = nil) {
         var list = favorites
         guard !list.contains(where: { $0.path == url.path }) else { return }

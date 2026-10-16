@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.registerGlobalShortcut()
         }
         Settings.setUpLoginItemOnce()
+        Settings.setUpReplacesFinderOnce()
         if !openedWithURLs && !launchedAtLogin { openWindow(at: Settings.homeFolder) }
         NSApp.activate(ignoringOtherApps: true)
     }
