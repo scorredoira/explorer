@@ -185,7 +185,15 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         let target = url.standardizedFileURL
         guard isFolder(target) else {
             if Volumes.remountURL(for: target) != nil {
-                Volumes.mount(target) { [weak self] in self?.navigate(to: target, record: record, select: select) }
+                favorites.highlight(target, loading: true)
+                Volumes.mount(target) { [weak self] mounted in
+                    guard let self else { return }
+                    if mounted {
+                        self.navigate(to: target, record: record, select: select)
+                    } else {
+                        self.favorites.highlight(self.current)
+                    }
+                }
             } else {
                 NSSound.beep()
             }
@@ -208,12 +216,35 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         let watchedPath = current.resolvingSymlinksInPath().path
         watcher = DirectoryWatcher(path: watchedPath) { [weak self] paths in self?.filesChanged(paths) }
 
-        loadRoot()
+        // The listing is read off the main thread: on a network volume it can take a second.
+        allRootItems = []
+        applyFilter()
         outline.reloadData()
-        outline.scrollRowToVisible(0)
-        if let select { selectURLs([select]) }
-        favorites.highlight(current)
+        favorites.highlight(current, loading: true)
         updateButtons()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let result = Result { try FileItem.read(target, parent: nil) }
+            DispatchQueue.main.async {
+                guard let self, self.current == target else { return }
+                let items: [FileItem]
+                switch result {
+                case .success(let read):
+                    items = read
+                case .failure(let error):
+                    items = []
+                    let denied = (error as NSError).code == NSFileReadNoPermissionError
+                    showError(denied
+                        ? "Explorer can't read \(target.path). Give it Full Disk Access in System Settings → Privacy & Security."
+                        : error.localizedDescription)
+                }
+                self.allRootItems = FileItem.sort(items, by: self.sortDescriptor)
+                self.applyFilter()
+                self.outline.reloadData()
+                self.outline.scrollRowToVisible(0)
+                if let select { self.selectURLs([select]) }
+                self.favorites.highlight(target)
+            }
+        }
     }
 
     private func updateButtons() {

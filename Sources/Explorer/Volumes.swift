@@ -7,15 +7,6 @@ enum Volumes {
     /// userCanceledErr: the person closed the sign-in dialog.
     private static let userCanceled: Int32 = -128
 
-    /// A server, in the blue of the folder icons around it.
-    static var serverIcon: NSImage {
-        let blue = NSColor(srgbRed: 0.36, green: 0.66, blue: 0.92, alpha: 1)
-        let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .medium)
-            .applying(.init(paletteColors: [blue]))
-        return NSImage(systemSymbolName: "server.rack", accessibilityDescription: "Server")?
-            .withSymbolConfiguration(config) ?? NSWorkspace.shared.icon(for: .folder)
-    }
-
     static func remember(_ url: URL) {
         guard let values = try? url.resourceValues(forKeys: [.volumeURLKey, .volumeURLForRemountingKey]),
               let volume = values.volume, let remount = values.volumeURLForRemounting else { return }
@@ -33,35 +24,30 @@ enum Volumes {
     /// Remote URLs being mounted right now.
     private static var mounting: Set<URL> = []
 
-    static func isMounting(_ url: URL) -> Bool {
-        remountURL(for: url).map(mounting.contains) ?? false
-    }
-
-    private static func setMounting(_ remote: URL, _ on: Bool) {
-        if on { mounting.insert(remote) } else { mounting.remove(remote) }
-        NotificationCenter.default.post(name: .volumeMountingChanged, object: nil)
-    }
-
-    /// Mounts the volume of `url` and calls `done` once `url` is there. Errors are shown.
-    /// A second call while the volume is being mounted does nothing.
-    static func mount(_ url: URL, done: @escaping () -> Void) {
+    /// Mounts the volume of `url` and calls `done(true)` once `url` is there, `done(false)` if it
+    /// could not be mounted (errors are shown). A second call while the volume is being mounted
+    /// does nothing.
+    static func mount(_ url: URL, done: @escaping (Bool) -> Void) {
         guard let remote = remountURL(for: url), !mounting.contains(remote) else { return }
-        setMounting(remote, true)
+        mounting.insert(remote)
         var request: AsyncRequestID?
         let status = NetFSMountURLAsync(remote as CFURL, nil, nil, nil, nil, nil, &request, .main) { status, _, _ in
-            setMounting(remote, false)
+            mounting.remove(remote)
             if status == ECANCELED || status == userCanceled {
-                return
+                done(false)
             } else if status != 0 && status != EEXIST {
                 showError("Could not connect to \(remote.host ?? remote.absoluteString): \(errorText(status))")
+                done(false)
             } else if isFolder(url) {
-                done()
+                done(true)
             } else {
                 showError("Connected to \(remote.absoluteString), but \(url.path) is not there.")
+                done(false)
             }
         }
         if status != 0 {
-            setMounting(remote, false)
+            mounting.remove(remote)
+            done(false)
             showError("Could not connect to \(remote.host ?? remote.absoluteString): \(errorText(status))")
         }
     }

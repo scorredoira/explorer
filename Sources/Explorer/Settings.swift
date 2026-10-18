@@ -3,7 +3,6 @@ import ServiceManagement
 
 extension Notification.Name {
     static let favoritesChanged = Notification.Name("explorer.favoritesChanged")
-    static let volumeMountingChanged = Notification.Name("explorer.volumeMountingChanged")
     static let showHiddenChanged = Notification.Name("explorer.showHiddenChanged")
     static let clipboardChanged = Notification.Name("explorer.clipboardChanged")
     static let folderSizeUpdated = Notification.Name("explorer.folderSizeUpdated")

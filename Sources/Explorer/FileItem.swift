@@ -35,9 +35,13 @@ final class FileItem: NSObject {
     }
 
     static func list(_ dir: URL, parent: FileItem?) -> [FileItem] {
+        (try? read(dir, parent: parent)) ?? []
+    }
+
+    static func read(_ dir: URL, parent: FileItem?) throws -> [FileItem] {
         let options: FileManager.DirectoryEnumerationOptions = Settings.showHidden ? [] : [.skipsHiddenFiles]
-        let urls = (try? FileManager.default.contentsOfDirectory(
-            at: dir, includingPropertiesForKeys: keys, options: options)) ?? []
+        let urls = try FileManager.default.contentsOfDirectory(
+            at: dir, includingPropertiesForKeys: keys, options: options)
         return urls.map { FileItem(url: $0, parent: parent) }
     }
 
