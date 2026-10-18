@@ -184,7 +184,11 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
     func navigate(to url: URL, record: Bool = true, select: URL? = nil) {
         let target = url.standardizedFileURL
         guard isFolder(target) else {
-            NSSound.beep()
+            if Volumes.remountURL(for: target) != nil {
+                Volumes.mount(target) { [weak self] in self?.navigate(to: target, record: record, select: select) }
+            } else {
+                NSSound.beep()
+            }
             return
         }
         if record && target.path != current.path {

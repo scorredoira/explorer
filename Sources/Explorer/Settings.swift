@@ -118,9 +118,16 @@ enum Settings {
         replacesFinder = true
     }
 
+    /// Network volumes of the favorites, volume path -> URL to mount it again (smb://…).
+    static var remounts: [String: String] {
+        get { defaults.dictionary(forKey: "remounts") as? [String: String] ?? [:] }
+        set { defaults.set(newValue, forKey: "remounts") }
+    }
+
     static func addFavorite(_ url: URL, at index: Int? = nil) {
         var list = favorites
         guard !list.contains(where: { $0.path == url.path }) else { return }
+        Volumes.remember(url)
         list.insert(url, at: min(index ?? list.count, list.count))
         favorites = list
     }
