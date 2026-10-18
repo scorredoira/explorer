@@ -1,6 +1,5 @@
 import AppKit
 import NetFS
-import UniformTypeIdentifiers
 
 /// Network volumes (SMB, AFP, NFS…) mounted again on demand, so a favorite on one keeps working
 /// after a restart or a disconnect.
@@ -8,9 +7,21 @@ enum Volumes {
     /// userCanceledErr: the person closed the sign-in dialog.
     private static let userCanceled: Int32 = -128
 
-    /// The icon macOS gives a mounted network volume, available while it is not mounted too.
+    /// A folder with a server glyph, drawn like the system folders (Downloads, Desktop…).
     static var serverIcon: NSImage {
-        NSWorkspace.shared.icon(for: UTType("com.apple.file-server") ?? .folder)
+        let folder = NSWorkspace.shared.icon(for: .folder)
+        let tint = NSColor(srgbRed: 0.30, green: 0.58, blue: 0.84, alpha: 0.75)
+        return NSImage(size: NSSize(width: 64, height: 64), flipped: false) { rect in
+            folder.draw(in: rect)
+            let config = NSImage.SymbolConfiguration(pointSize: rect.height * 0.34, weight: .medium)
+                .applying(.init(paletteColors: [tint]))
+            guard let glyph = NSImage(systemSymbolName: "server.rack", accessibilityDescription: nil)?
+                .withSymbolConfiguration(config) else { return true }
+            let size = glyph.size
+            glyph.draw(in: NSRect(x: rect.midX - size.width / 2, y: rect.height * 0.39 - size.height / 2,
+                                  width: size.width, height: size.height))
+            return true
+        }
     }
 
     static func remember(_ url: URL) {
