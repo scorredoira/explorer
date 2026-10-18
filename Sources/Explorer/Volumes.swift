@@ -30,11 +30,26 @@ enum Volumes {
         return nil
     }
 
+    /// Remote URLs being mounted right now.
+    private static var mounting: Set<URL> = []
+
+    static func isMounting(_ url: URL) -> Bool {
+        remountURL(for: url).map(mounting.contains) ?? false
+    }
+
+    private static func setMounting(_ remote: URL, _ on: Bool) {
+        if on { mounting.insert(remote) } else { mounting.remove(remote) }
+        NotificationCenter.default.post(name: .volumeMountingChanged, object: nil)
+    }
+
     /// Mounts the volume of `url` and calls `done` once `url` is there. Errors are shown.
+    /// A second call while the volume is being mounted does nothing.
     static func mount(_ url: URL, done: @escaping () -> Void) {
-        guard let remote = remountURL(for: url) else { return }
+        guard let remote = remountURL(for: url), !mounting.contains(remote) else { return }
+        setMounting(remote, true)
         var request: AsyncRequestID?
         let status = NetFSMountURLAsync(remote as CFURL, nil, nil, nil, nil, nil, &request, .main) { status, _, _ in
+            setMounting(remote, false)
             if status == ECANCELED || status == userCanceled {
                 return
             } else if status != 0 && status != EEXIST {
@@ -46,6 +61,7 @@ enum Volumes {
             }
         }
         if status != 0 {
+            setMounting(remote, false)
             showError("Could not connect to \(remote.host ?? remote.absoluteString): \(errorText(status))")
         }
     }

@@ -45,9 +45,16 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         NotificationCenter.default.addObserver(forName: .favoritesChanged, object: nil, queue: .main) { [weak self] _ in
             guard let self else { return }
             self.items = Settings.favorites
-            self.table.reloadData()
-            if let current = self.browser?.current { self.highlight(current) }
+            self.reload()
         }
+        NotificationCenter.default.addObserver(forName: .volumeMountingChanged, object: nil, queue: .main) { [weak self] _ in
+            self?.reload()
+        }
+    }
+
+    private func reload() {
+        table.reloadData()
+        if let current = browser?.current { highlight(current) }
     }
 
     func highlight(_ url: URL) {
@@ -91,7 +98,7 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
             return header
         }
         let id = NSUserInterfaceItemIdentifier("favorite-cell")
-        let cell = tableView.makeView(withIdentifier: id, owner: self) as? NSTableCellView ?? makeCell(id)
+        let cell = tableView.makeView(withIdentifier: id, owner: self) as? FavoriteCell ?? makeCell(id)
         let url = items[row - 1]
         // A favorite on a network volume opens even when it is not mounted: a click mounts it.
         let remote = Volumes.remountURL(for: url) != nil
@@ -99,6 +106,10 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         cell.textField?.stringValue = FileManager.default.displayName(atPath: url.path)
         cell.textField?.textColor = exists ? .labelColor : .tertiaryLabelColor
         cell.toolTip = url.path
+        let mounting = Volumes.isMounting(url)
+        cell.imageView?.isHidden = mounting
+        cell.spinner.isHidden = !mounting
+        if mounting { cell.spinner.startAnimation(nil) } else { cell.spinner.stopAnimation(nil) }
         if remote {
             cell.imageView?.image = Volumes.serverIcon
         } else {
@@ -109,13 +120,17 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         return cell
     }
 
-    private func makeCell(_ id: NSUserInterfaceItemIdentifier) -> NSTableCellView {
-        let cell = NSTableCellView()
+    private func makeCell(_ id: NSUserInterfaceItemIdentifier) -> FavoriteCell {
+        let cell = FavoriteCell()
         cell.identifier = id
         let image = NSImageView()
         let text = NSTextField(labelWithString: "")
         text.lineBreakMode = .byTruncatingTail
-        for sub in [image, text] as [NSView] {
+        let spinner = cell.spinner
+        spinner.style = .spinning
+        spinner.controlSize = .small
+        spinner.isDisplayedWhenStopped = false
+        for sub in [image, text, spinner] as [NSView] {
             sub.translatesAutoresizingMaskIntoConstraints = false
             cell.addSubview(sub)
         }
@@ -126,6 +141,8 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
             image.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
             image.widthAnchor.constraint(equalToConstant: 16),
             image.heightAnchor.constraint(equalToConstant: 16),
+            spinner.centerXAnchor.constraint(equalTo: image.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: image.centerYAnchor),
             text.leadingAnchor.constraint(equalTo: image.trailingAnchor, constant: 6),
             text.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
             text.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
@@ -207,4 +224,9 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         menu.separator()
         menu.add("Remove from Favorites") { Settings.removeFavorite(url) }
     }
+}
+
+/// A favorite's row: icon and name, and a spinner in place of the icon while its volume mounts.
+final class FavoriteCell: NSTableCellView {
+    let spinner = NSProgressIndicator()
 }
