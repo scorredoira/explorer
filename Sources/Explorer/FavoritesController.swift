@@ -99,9 +99,13 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         cell.textField?.stringValue = FileManager.default.displayName(atPath: url.path)
         cell.textField?.textColor = exists ? .labelColor : .tertiaryLabelColor
         cell.toolTip = url.path
-        let icon = remote ? Volumes.serverIcon : NSWorkspace.shared.icon(forFile: url.path)
-        icon.size = NSSize(width: 16, height: 16)
-        cell.imageView?.image = icon
+        if remote {
+            cell.imageView?.image = Volumes.serverIcon
+        } else {
+            let icon = NSWorkspace.shared.icon(forFile: url.path)
+            icon.size = NSSize(width: 16, height: 16)
+            cell.imageView?.image = icon
+        }
         return cell
     }
 
