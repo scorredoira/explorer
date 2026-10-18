@@ -93,11 +93,13 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         let id = NSUserInterfaceItemIdentifier("favorite-cell")
         let cell = tableView.makeView(withIdentifier: id, owner: self) as? NSTableCellView ?? makeCell(id)
         let url = items[row - 1]
-        let exists = isFolder(url)
+        // A favorite on a network volume opens even when it is not mounted: a click mounts it.
+        let remote = Volumes.remountURL(for: url) != nil
+        let exists = remote || isFolder(url)
         cell.textField?.stringValue = FileManager.default.displayName(atPath: url.path)
         cell.textField?.textColor = exists ? .labelColor : .tertiaryLabelColor
         cell.toolTip = url.path
-        let icon = NSWorkspace.shared.icon(forFile: url.path)
+        let icon = remote ? Volumes.serverIcon : NSWorkspace.shared.icon(forFile: url.path)
         icon.size = NSSize(width: 16, height: 16)
         cell.imageView?.image = icon
         return cell

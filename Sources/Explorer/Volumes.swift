@@ -1,11 +1,17 @@
 import AppKit
 import NetFS
+import UniformTypeIdentifiers
 
 /// Network volumes (SMB, AFP, NFS…) mounted again on demand, so a favorite on one keeps working
 /// after a restart or a disconnect.
 enum Volumes {
     /// userCanceledErr: the person closed the sign-in dialog.
     private static let userCanceled: Int32 = -128
+
+    /// The icon macOS gives a mounted network volume, available while it is not mounted too.
+    static var serverIcon: NSImage {
+        NSWorkspace.shared.icon(for: UTType("com.apple.file-server") ?? .folder)
+    }
 
     static func remember(_ url: URL) {
         guard let values = try? url.resourceValues(forKeys: [.volumeURLKey, .volumeURLForRemountingKey]),
