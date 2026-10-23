@@ -3,6 +3,7 @@ import ServiceManagement
 
 extension Notification.Name {
     static let favoritesChanged = Notification.Name("explorer.favoritesChanged")
+    static let serversChanged = Notification.Name("explorer.serversChanged")
     static let showHiddenChanged = Notification.Name("explorer.showHiddenChanged")
     static let clipboardChanged = Notification.Name("explorer.clipboardChanged")
     static let folderSizeUpdated = Notification.Name("explorer.folderSizeUpdated")
@@ -52,6 +53,18 @@ enum Settings {
         set {
             defaults.set(newValue.map(\.path), forKey: "favorites")
             NotificationCenter.default.post(name: .favoritesChanged, object: nil)
+        }
+    }
+
+    /// The Servers section of the sidebar.
+    static var servers: [Server] {
+        get {
+            let stored = defaults.array(forKey: "servers") as? [[String: String]] ?? []
+            return stored.map { Server(name: $0["name"] ?? "", disk: $0["disk"] ?? "", screen: $0["screen"] ?? "") }
+        }
+        set {
+            defaults.set(newValue.map { ["name": $0.name, "disk": $0.disk, "screen": $0.screen] }, forKey: "servers")
+            NotificationCenter.default.post(name: .serversChanged, object: nil)
         }
     }
 
@@ -135,6 +148,17 @@ enum Settings {
     static func removeFavorite(_ url: URL) {
         favorites = favorites.filter { $0.path != url.path }
     }
+}
+
+/// Another machine: its disk (smb://host/share, afp://…) opens in the list, its screen (vnc://host)
+/// in Screen Sharing. Either can be empty.
+struct Server: Equatable {
+    var name: String
+    var disk: String
+    var screen: String
+
+    var diskURL: URL? { disk.isEmpty ? nil : URL(string: disk) }
+    var screenURL: URL? { screen.isEmpty ? nil : URL(string: screen) }
 }
 
 func isFolder(_ url: URL) -> Bool {

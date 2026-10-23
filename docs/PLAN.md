@@ -43,6 +43,14 @@ A file browser for macOS, built to be used instead of Finder.
 - Right-click: Open, Open in New Window, Open in den, Copy Path, Open Terminal Here, Paste Inside, Remove from Favorites.
 - Defaults: home, Desktop, Documents, Downloads.
 
+## Servers (left sidebar)
+
+- Other machines, each with a name, a disk URL (`smb://host/share`) and a screen URL (`vnc://host[:port]`); either can be empty.
+- Click: mounts the disk if needed and opens it in the list (spins while it mounts); with no disk, opens the screen.
+- The display button on the row opens the screen in Screen Sharing.
+- Right-click: Open Disk, Open Screen, Edit Server…, Remove Server, Add Server…. Add Server… also on the section headers and empty space.
+- The section shows only when there is a server.
+
 ## Right-click
 
 On an item:

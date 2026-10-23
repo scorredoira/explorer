@@ -40,6 +40,11 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
     private weak var browser: BrowserWindowController?
     private var items: [URL] = Settings.favorites
     private let locations = Location.all
+    private var servers: [Server] = Settings.servers
+    /// Servers whose disk is being mounted, by name; their rows spin.
+    private var connecting: Set<String> = []
+    /// Where each server's disk was mounted, by name, to select its row while it is shown.
+    private var serverVolumes: [String: URL] = [:]
     /// The folder the window is opening (mounting its volume or reading it); its row spins.
     private var loading: URL?
 
@@ -47,6 +52,7 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         case header(String)
         case favorite(Int)
         case location(Location)
+        case server(Int)
     }
 
     init(browser: BrowserWindowController) {
@@ -88,6 +94,11 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
             self.items = Settings.favorites
             self.reload()
         }
+        NotificationCenter.default.addObserver(forName: .serversChanged, object: nil, queue: .main) { [weak self] _ in
+            guard let self else { return }
+            self.servers = Settings.servers
+            self.reload()
+        }
     }
 
     private func reload() {
@@ -109,24 +120,62 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
             table.selectRowIndexes([index + 1], byExtendingSelection: false)
         } else if let index = locations.firstIndex(where: { $0.url.standardizedFileURL.path == path }) {
             table.selectRowIndexes([locationsHeader + 1 + index], byExtendingSelection: false)
+        } else if let index = servers.firstIndex(where: { serverVolumes[$0.name]?.standardizedFileURL.path == path }) {
+            table.selectRowIndexes([serversHeader + 1 + index], byExtendingSelection: false)
         } else {
             table.deselectAll(nil)
         }
     }
 
     @objc private func clicked(_ sender: Any?) {
+        if case .server(let index) = row(table.clickedRow) {
+            openServer(servers[index])
+            return
+        }
         guard let url = url(table.clickedRow) else { return }
         browser?.navigate(to: url)
     }
 
+    /// Opens the server's disk in the list, or its screen when it has no disk.
+    private func openServer(_ server: Server) {
+        guard let disk = server.diskURL else {
+            openScreen(server)
+            return
+        }
+        connecting.insert(server.name)
+        reload()
+        Volumes.connect(disk) { [weak self] volume in
+            guard let self else { return }
+            self.connecting.remove(server.name)
+            if let volume {
+                self.serverVolumes[server.name] = volume
+                self.browser?.navigate(to: volume)
+            } else {
+                self.reload()
+            }
+        }
+    }
+
+    private func openScreen(_ server: Server) {
+        guard let screen = server.screenURL, NSWorkspace.shared.open(screen) else {
+            showError("Could not open the screen of \(server.name) (\(server.screen)).")
+            return
+        }
+    }
+
     private var locationsHeader: Int { items.count + 1 }
+    private var serversHeader: Int { locationsHeader + locations.count + 1 }
 
     private func row(_ row: Int) -> Row? {
+        if row < 0 { return nil }
         if row == 0 { return .header("Favorites") }
         if row <= items.count { return .favorite(row - 1) }
         if row == locationsHeader { return .header("Locations") }
-        let index = row - locationsHeader - 1
-        return index >= 0 && index < locations.count ? .location(locations[index]) : nil
+        if row < serversHeader { return .location(locations[row - locationsHeader - 1]) }
+        if servers.isEmpty { return nil }
+        if row == serversHeader { return .header("Servers") }
+        let index = row - serversHeader - 1
+        return index < servers.count ? .server(index) : nil
     }
 
     private func index(_ row: Int) -> Int? {
@@ -147,7 +196,9 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         return false
     }
 
-    func numberOfRows(in tableView: NSTableView) -> Int { items.count + locations.count + 2 }
+    func numberOfRows(in tableView: NSTableView) -> Int {
+        items.count + locations.count + 2 + (servers.isEmpty ? 0 : servers.count + 1)
+    }
 
     func tableView(_ tableView: NSTableView, isGroupRow row: Int) -> Bool { isHeader(row) }
 
@@ -173,6 +224,19 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         }
         let id = NSUserInterfaceItemIdentifier("favorite-cell")
         let cell = tableView.makeView(withIdentifier: id, owner: self) as? FavoriteCell ?? makeCell(id)
+        cell.onScreen = nil
+        if case .server(let index) = kind {
+            let server = servers[index]
+            cell.textField?.stringValue = server.name
+            cell.textField?.textColor = .labelColor
+            cell.toolTip = [server.disk, server.screen].filter { !$0.isEmpty }.joined(separator: "\n")
+            cell.spin(connecting.contains(server.name))
+            cell.imageView?.image = sidebarSymbol(server.diskURL == nil ? "display" : "server.rack")
+            if server.screenURL != nil {
+                cell.onScreen = { [weak self] in self?.openScreen(server) }
+            }
+            return cell
+        }
         if case .location(let location) = kind {
             cell.textField?.stringValue = location.name
             cell.textField?.textColor = .labelColor
@@ -214,7 +278,12 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
         spinner.style = .spinning
         spinner.controlSize = .small
         spinner.isDisplayedWhenStopped = false
-        for sub in [image, text, spinner] as [NSView] {
+        let screen = cell.screenButton
+        screen.image = NSImage(systemSymbolName: "display", accessibilityDescription: "Open Screen")
+        screen.isBordered = false
+        screen.toolTip = "Open Screen"
+        screen.isHidden = true
+        for sub in [image, text, spinner, screen] as [NSView] {
             sub.translatesAutoresizingMaskIntoConstraints = false
             cell.addSubview(sub)
         }
@@ -228,8 +297,11 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
             spinner.centerXAnchor.constraint(equalTo: image.centerXAnchor),
             spinner.centerYAnchor.constraint(equalTo: image.centerYAnchor),
             text.leadingAnchor.constraint(equalTo: image.trailingAnchor, constant: 6),
-            text.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
+            text.trailingAnchor.constraint(lessThanOrEqualTo: screen.leadingAnchor, constant: -4),
             text.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
+            screen.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -6),
+            screen.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
+            screen.widthAnchor.constraint(equalToConstant: 18),
         ])
         return cell
     }
@@ -314,6 +386,23 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
+        let clicked = row(table.clickedRow)
+        if case .server(let index) = clicked {
+            let server = servers[index]
+            menu.add("Open Disk", enabled: server.diskURL != nil) { [weak self] in self?.openServer(server) }
+            menu.add("Open Screen", enabled: server.screenURL != nil) { [weak self] in self?.openScreen(server) }
+            menu.separator()
+            menu.add("Edit Server…") { Self.editServer(at: index) }
+            menu.add("Remove Server") { Settings.servers.remove(at: index) }
+        }
+        switch clicked {
+        case .favorite, .location:
+            break
+        default:
+            menu.separator()
+            menu.add("Add Server…") { Self.editServer(at: nil) }
+            return
+        }
         guard let url = url(table.clickedRow) else { return }
         let favorite = index(table.clickedRow) != nil
         menu.add("Open") { [weak self] in self?.browser?.navigate(to: url) }
@@ -328,11 +417,70 @@ final class FavoritesController: NSObject, NSTableViewDataSource, NSTableViewDel
             menu.add("Remove from Favorites") { Settings.removeFavorite(url) }
         }
     }
+
+    /// Asks for a server's name, disk and screen, and adds it (`index` nil) or changes it.
+    private static func editServer(at index: Int?) {
+        var server = index.map { Settings.servers[$0] } ?? Server(name: "", disk: "", screen: "")
+        while true {
+            let alert = NSAlert()
+            alert.messageText = index == nil ? "Add Server" : "Edit Server"
+            alert.informativeText = "The disk opens in the list (smb://host/share). The screen opens in Screen Sharing (vnc://host or vnc://host:port)."
+            alert.addButton(withTitle: index == nil ? "Add" : "Save")
+            alert.addButton(withTitle: "Cancel")
+            let name = NSTextField(string: server.name)
+            let disk = NSTextField(string: server.disk)
+            disk.placeholderString = "smb://host/share"
+            let screen = NSTextField(string: server.screen)
+            screen.placeholderString = "vnc://host"
+            let grid = NSGridView(views: [
+                [NSTextField(labelWithString: "Name:"), name],
+                [NSTextField(labelWithString: "Disk:"), disk],
+                [NSTextField(labelWithString: "Screen:"), screen],
+            ])
+            grid.column(at: 0).xPlacement = .trailing
+            grid.column(at: 1).width = 280
+            grid.rowSpacing = 8
+            grid.frame = NSRect(x: 0, y: 0, width: 340, height: 86)
+            alert.accessoryView = grid
+            alert.window.initialFirstResponder = name
+            guard alert.runModal() == .alertFirstButtonReturn else { return }
+            server = Server(name: name.stringValue.trimmingCharacters(in: .whitespaces),
+                            disk: disk.stringValue.trimmingCharacters(in: .whitespaces),
+                            screen: screen.stringValue.trimmingCharacters(in: .whitespaces))
+            var list = Settings.servers
+            let others = list.enumerated().filter { $0.offset != index }.map(\.element)
+            if server.name.isEmpty || server.disk.isEmpty && server.screen.isEmpty {
+                showError("A server needs a name and a disk or a screen.")
+            } else if others.contains(where: { $0.name == server.name }) {
+                showError("There is already a server named \(server.name).")
+            } else if !server.disk.isEmpty && server.diskURL?.host == nil {
+                showError("\(server.disk) is not a disk URL, like smb://host/share.")
+            } else if !server.screen.isEmpty && server.screenURL?.scheme == nil {
+                showError("\(server.screen) is not a screen URL, like vnc://host.")
+            } else {
+                if let index { list[index] = server } else { list.append(server) }
+                Settings.servers = list
+                return
+            }
+        }
+    }
 }
 
 /// A favorite's row: icon and name, and a spinner in place of the icon while its volume mounts.
+/// A server's row also has a button that opens its screen.
 final class FavoriteCell: NSTableCellView {
     let spinner = NSProgressIndicator()
+    let screenButton = NSButton()
+
+    var onScreen: (() -> Void)? {
+        didSet {
+            screenButton.isHidden = onScreen == nil
+            screenButton.target = self
+            screenButton.action = #selector(screenClicked)
+        }
+    }
+
+    @objc private func screenClicked() { onScreen?() }
 
     func spin(_ on: Bool) {
         imageView?.isHidden = on

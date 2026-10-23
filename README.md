@@ -15,6 +15,7 @@ A fast, no-nonsense file browser for macOS, built to replace Finder for everyday
 - **Editable path bar** with shell-style Tab completion.
 - **Cut and paste like Windows/Linux** (`⌘X` / `⌘V`), with full undo (`⌘Z`).
 - **Favorites sidebar**, drag folders in and reorder them like in Finder.
+- **Servers in the sidebar**: a click opens another machine's disk (`smb://`), a button opens its screen (`vnc://`).
 - **Open Terminal Here** (a new Ghostty window by default) and **Open in den**.
 - **`⌘E` from anywhere** opens a new window, like Win+E. You can change it in Settings.
 - **Replaces Finder for "Show in Finder"**: other apps reveal files and folders in Explorer. Turn it off in Settings. Apps already running pick it up after a restart.
