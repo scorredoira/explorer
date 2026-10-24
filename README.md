@@ -1,5 +1,3 @@
-er<p align="center"><img src="docs/screenshots/icon.png" width="128" alt="Explorer icon"></p>
-
 # Explorer
 
 A fast, no-nonsense file browser for macOS, built to replace Finder for everyday use. Native Swift + AppKit, no dependencies.
