@@ -182,7 +182,9 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         center.addObserver(forName: .folderSizeUpdated, object: nil, queue: .main) { [weak self] note in
             guard let self, let path = note.object as? String else { return }
             self.refreshSize(path: path)
-            if self.selectedItems().contains(where: { $0.path == path }) { self.updateStatus() }
+            if path == self.current.path || self.selectedItems().contains(where: { $0.path == path }) {
+                self.updateStatus()
+            }
         }
     }
 
@@ -238,6 +240,7 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         applyFilter()
         outline.reloadData()
         refreshAvailableSpace()
+        requestSize(at: current)
         favorites.highlight(current, loading: true)
         updateButtons()
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -321,6 +324,7 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         selectPaths(selected)
         updateStatus()
         refreshAvailableSpace()
+        requestSize(at: current)
     }
 
     private func expandedPaths() -> Set<String> {
@@ -394,13 +398,15 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         outline.reloadData(forRowIndexes: [row], columnIndexes: [column])
     }
 
-    func requestSize(_ item: FileItem) {
-        let path = item.path
+    func requestSize(_ item: FileItem) { requestSize(at: item.url) }
+
+    func requestSize(at url: URL) {
+        let path = url.path
         guard FolderSizes.shared.needsCompute(path), !pendingSizes.contains(path) else { return }
         pendingSizes.insert(path)
         let op = BlockOperation()
         op.addExecutionBlock { [weak op, weak self] in
-            let size = FolderSizes.compute(item.url.resolvingSymlinksInPath()) { op?.isCancelled ?? true }
+            let size = FolderSizes.compute(url.resolvingSymlinksInPath()) { op?.isCancelled ?? true }
             let cancelled = op?.isCancelled ?? true
             DispatchQueue.main.async {
                 self?.pendingSizes.remove(path)

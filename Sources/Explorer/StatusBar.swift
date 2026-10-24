@@ -57,6 +57,7 @@ extension BrowserWindowController {
                 ? "No items"
                 : "\(counted(folders, "folder", "folders")), \(counted(files, "file", "files"))")
             if !filterText.isEmpty { parts.append("filtered from \(allRootItems.count.formatted())") }
+            parts.append(FolderSizes.shared.size(current.path).map { sizeFormatter.string(fromByteCount: $0) } ?? "…")
         } else {
             parts.append("\(selected.count.formatted()) of \(outline.numberOfRows.formatted()) selected")
             let sizes = selected.map(\.displaySize)
