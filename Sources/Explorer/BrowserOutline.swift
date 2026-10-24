@@ -122,6 +122,7 @@ extension BrowserWindowController: NSOutlineViewDataSource, NSOutlineViewDelegat
     }
 
     func outlineViewSelectionDidChange(_ notification: Notification) {
+        updateStatus()
         if QLPreviewPanel.sharedPreviewPanelExists(), QLPreviewPanel.shared().isVisible {
             QLPreviewPanel.shared().reloadData()
         }
@@ -129,6 +130,11 @@ extension BrowserWindowController: NSOutlineViewDataSource, NSOutlineViewDelegat
 
     func outlineViewItemDidCollapse(_ notification: Notification) {
         (notification.userInfo?["NSObject"] as? FileItem)?.children = nil
+        updateStatus()
+    }
+
+    func outlineViewItemDidExpand(_ notification: Notification) {
+        updateStatus()
     }
 
     // MARK: Drag and drop

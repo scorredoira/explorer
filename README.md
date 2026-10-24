@@ -10,6 +10,7 @@ A fast, no-nonsense file browser for macOS, built to replace Finder for everyday
 
 - **Always a list.** Name, date, size and kind — no icon views, no galleries.
 - **Real folder sizes.** Recursive sizes computed in the background, right in the Size column.
+- **Status bar**: the folders and files in the folder, or the count and size of the selection, and the free space.
 - **Copy Path everywhere.** Every right-click menu has it.
 - **New Folder / New File anywhere.** Right-click empty space to create in the current folder, or a folder to create inside it.
 - **Editable path bar** with shell-style Tab completion.

@@ -24,6 +24,8 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
     let outline = FileOutlineView()
     let pathField = NSTextField()
     let searchField = NSSearchField()
+    let statusBar = StatusBar()
+    var availableSpace: Int64?
     private let backButton = NSButton()
     private let forwardButton = NSButton()
     private let upButton = NSButton()
@@ -88,8 +90,21 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         listScroll.hasHorizontalScroller = true
         listScroll.autohidesScrollers = true
         listScroll.drawsBackground = false
+        listScroll.translatesAutoresizingMaskIntoConstraints = false
+        let listPane = NSView()
+        listPane.addSubview(listScroll)
+        listPane.addSubview(statusBar)
+        NSLayoutConstraint.activate([
+            listScroll.topAnchor.constraint(equalTo: listPane.topAnchor),
+            listScroll.leadingAnchor.constraint(equalTo: listPane.leadingAnchor),
+            listScroll.trailingAnchor.constraint(equalTo: listPane.trailingAnchor),
+            listScroll.bottomAnchor.constraint(equalTo: statusBar.topAnchor),
+            statusBar.leadingAnchor.constraint(equalTo: listPane.leadingAnchor),
+            statusBar.trailingAnchor.constraint(equalTo: listPane.trailingAnchor),
+            statusBar.bottomAnchor.constraint(equalTo: listPane.bottomAnchor),
+        ])
         let listController = NSViewController()
-        listController.view = listScroll
+        listController.view = listPane
 
         let sidebarController = NSViewController()
         sidebarController.view = favorites.view
@@ -167,6 +182,7 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         center.addObserver(forName: .folderSizeUpdated, object: nil, queue: .main) { [weak self] note in
             guard let self, let path = note.object as? String else { return }
             self.refreshSize(path: path)
+            if self.selectedItems().contains(where: { $0.path == path }) { self.updateStatus() }
         }
     }
 
@@ -218,8 +234,10 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
 
         // The listing is read off the main thread: on a network volume it can take a second.
         allRootItems = []
+        availableSpace = nil
         applyFilter()
         outline.reloadData()
+        refreshAvailableSpace()
         favorites.highlight(current, loading: true)
         updateButtons()
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -284,6 +302,7 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         rootItems = filterText.isEmpty
             ? allRootItems
             : allRootItems.filter { $0.name.localizedCaseInsensitiveContains(filterText) }
+        updateStatus()
     }
 
     func children(of item: FileItem) -> [FileItem] {
@@ -300,6 +319,8 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
         outline.reloadData()
         expand(paths: expanded)
         selectPaths(selected)
+        updateStatus()
+        refreshAvailableSpace()
     }
 
     private func expandedPaths() -> Set<String> {

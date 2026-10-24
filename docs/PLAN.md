@@ -24,6 +24,7 @@ A file browser for macOS, built to be used instead of Finder.
 - Recursive folder size in the Size column: computed in the background ("…" meanwhile), cancelled when you leave the folder, cached. When something changes inside, the old value stays until the row is drawn again (at most one recompute every 30 s per folder).
 - The list updates itself when files change (FSEvents).
 - Cut items are dimmed.
+- A status bar under the list: with nothing selected, the folders and files of the folder (and how many before the filter); with a selection, how many of the rows and their total size (once every folder size is known). Always the free space of the volume.
 
 ## Path
 
