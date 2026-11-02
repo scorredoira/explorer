@@ -1,0 +1,4 @@
+#!/bin/zsh
+# explorer [path...]: opens each path in Explorer, the current folder by default.
+(( $# )) || set -- .
+exec open -a Explorer "$@"

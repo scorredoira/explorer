@@ -16,6 +16,7 @@ A fast, no-nonsense file browser for macOS, built to replace Finder for everyday
 - **Favorites sidebar**, drag folders in and reorder them like in Finder.
 - **Servers in the sidebar**: a click opens another machine's disk (`smb://`), a button opens its screen (`vnc://`).
 - **Open Terminal Here** (a new Ghostty window by default) and **Open in den**.
+- **`explorer .` from a terminal** opens the folder (any paths, the current folder by default).
 - **`⌘E` from anywhere** opens a new window, like Win+E. You can change it in Settings.
 - **Replaces Finder for "Show in Finder"**: other apps reveal files and folders in Explorer. Turn it off in Settings. Apps already running pick it up after a restart.
 
@@ -41,7 +42,7 @@ cd explorer
 ./install.sh
 ```
 
-This builds the app, signs it with your Apple Development certificate if you have one (ad hoc otherwise), installs it to `~/Applications/Explorer.app` and opens it. Explorer adds itself to your login items so the shortcut always works; turn that off in Settings.
+This builds the app, signs it with your Apple Development certificate if you have one (ad hoc otherwise), installs it to `~/Applications/Explorer.app`, links the `explorer` command into `~/.local/bin` and opens it. Explorer adds itself to your login items so the shortcut always works; turn that off in Settings.
 
 Tip: give Explorer **Full Disk Access** (System Settings → Privacy & Security) so it can show folder sizes everywhere without permission prompts.
 
