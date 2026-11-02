@@ -114,6 +114,7 @@ extension BrowserWindowController: NSOutlineViewDataSource, NSOutlineViewDelegat
     }
 
     func outlineView(_ outlineView: NSOutlineView, sortDescriptorsDidChange oldDescriptors: [NSSortDescriptor]) {
+        Settings.sortOrder = outlineView.sortDescriptors
         reload()
     }
 

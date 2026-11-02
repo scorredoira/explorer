@@ -153,9 +153,9 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
             outline.addTableColumn(column)
             if id == "name" { outline.outlineTableColumn = column }
         }
-        outline.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
         outline.autosaveName = "ExplorerColumns"
         outline.autosaveTableColumns = true
+        outline.sortDescriptors = Settings.sortOrder
         outline.style = .inset
         outline.usesAlternatingRowBackgroundColors = true
         outline.allowsMultipleSelection = true
@@ -258,7 +258,7 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
                         ? "Explorer can't read \(target.path). Give it Full Disk Access in System Settings → Privacy & Security."
                         : error.localizedDescription)
                 }
-                self.allRootItems = FileItem.sort(items, by: self.sortDescriptor)
+                self.allRootItems = FileItem.sort(items, by: self.sortDescriptors)
                 self.applyFilter()
                 self.outline.reloadData()
                 self.outline.scrollRowToVisible(0)
@@ -294,10 +294,10 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
 
     // MARK: Loading
 
-    var sortDescriptor: NSSortDescriptor? { outline.sortDescriptors.first }
+    var sortDescriptors: [NSSortDescriptor] { outline.sortDescriptors }
 
     func loadRoot() {
-        allRootItems = FileItem.sort(FileItem.list(current, parent: nil), by: sortDescriptor)
+        allRootItems = FileItem.sort(FileItem.list(current, parent: nil), by: sortDescriptors)
         applyFilter()
     }
 
@@ -310,7 +310,7 @@ final class BrowserWindowController: NSWindowController, NSWindowDelegate {
 
     func children(of item: FileItem) -> [FileItem] {
         if let children = item.children { return children }
-        let children = FileItem.sort(FileItem.list(item.url, parent: item), by: sortDescriptor)
+        let children = FileItem.sort(FileItem.list(item.url, parent: item), by: sortDescriptors)
         item.children = children
         return children
     }

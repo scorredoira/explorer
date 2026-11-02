@@ -68,6 +68,24 @@ enum Settings {
         }
     }
 
+    /// The list's sort order, the column clicked last first. Default: kind, then newest first.
+    static var sortOrder: [NSSortDescriptor] {
+        get {
+            let stored = defaults.array(forKey: "sortOrder") as? [[String: Any]] ?? []
+            let order = stored.compactMap { entry -> NSSortDescriptor? in
+                guard let key = entry["key"] as? String, let ascending = entry["ascending"] as? Bool else { return nil }
+                return NSSortDescriptor(key: key, ascending: ascending)
+            }
+            return order.isEmpty
+                ? [NSSortDescriptor(key: "kind", ascending: true), NSSortDescriptor(key: "date", ascending: false)]
+                : order
+        }
+        set {
+            let stored = newValue.prefix(4).compactMap { d in d.key.map { ["key": $0, "ascending": d.ascending] as [String: Any] } }
+            defaults.set(stored, forKey: "sortOrder")
+        }
+    }
+
     static var openWith: [String: String] {
         get { defaults.dictionary(forKey: "openWith") as? [String: String] ?? [:] }
         set { defaults.set(newValue, forKey: "openWith") }

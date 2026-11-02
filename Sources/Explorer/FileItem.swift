@@ -45,24 +45,29 @@ final class FileItem: NSObject {
         return urls.map { FileItem(url: $0, parent: parent) }
     }
 
-    static func sort(_ items: [FileItem], by descriptor: NSSortDescriptor?) -> [FileItem] {
-        let key = descriptor?.key ?? "name"
-        let ascending = descriptor?.ascending ?? true
-        return items.sorted { a, b in
+    /// Folders first, then by each descriptor in turn (the column clicked last leads), then by name.
+    static func sort(_ items: [FileItem], by descriptors: [NSSortDescriptor]) -> [FileItem] {
+        items.sorted { a, b in
             if a.isFolder != b.isFolder { return a.isFolder }
-            let result: ComparisonResult
-            switch key {
-            case "date":
-                result = compare(a.modified ?? .distantPast, b.modified ?? .distantPast)
-            case "size":
-                result = compare(a.displaySize ?? -1, b.displaySize ?? -1)
-            case "kind":
-                result = a.kind.localizedStandardCompare(b.kind)
-            default:
-                result = .orderedSame
+            for descriptor in descriptors {
+                let result: ComparisonResult
+                switch descriptor.key {
+                case "date":
+                    result = compare(a.modified ?? .distantPast, b.modified ?? .distantPast)
+                case "size":
+                    result = compare(a.displaySize ?? -1, b.displaySize ?? -1)
+                case "kind":
+                    result = a.kind.localizedStandardCompare(b.kind)
+                case "name":
+                    result = a.name.localizedStandardCompare(b.name)
+                default:
+                    result = .orderedSame
+                }
+                if result != .orderedSame {
+                    return descriptor.ascending ? result == .orderedAscending : result == .orderedDescending
+                }
             }
-            let final = result == .orderedSame ? a.name.localizedStandardCompare(b.name) : result
-            return ascending ? final == .orderedAscending : final == .orderedDescending
+            return a.name.localizedStandardCompare(b.name) == .orderedAscending
         }
     }
 
